@@ -358,6 +358,15 @@ function pullScores() {
       }
     });
 
+    // Team records come along for free in this same scoreboard response (each
+    // competitor carries its current overall record) — no separate call
+    // needed. Weeks are walked 1->16 in order and later weeks simply
+    // overwrite earlier ones for the same team, so we end up with whatever
+    // is freshest. (A dedicated standings endpoint exists but ESPN's edge
+    // protection blocks it from Google's server IPs with an HTTP 403 —
+    // this scoreboard endpoint is the one already proven to work from here.)
+    const newRecords = {};
+
     for (let week = 1; week <= 16; week++) {
       const url = 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard'
         + '?seasontype=2&week=' + week + '&dates=' + SEASON_YEAR;
@@ -376,8 +385,16 @@ function pullScores() {
 
       events.forEach(function (ev) {
         const comp = ev.competitions && ev.competitions[0];
-        if (!comp || !comp.status || !comp.status.type || !comp.status.type.completed) return;
+        if (!comp) return;
         const competitors = comp.competitors || [];
+
+        competitors.forEach(function (c) {
+          const abbr = espnAbbr_(c.team.abbreviation);
+          const overall = (c.records || []).find(function (r) { return r.name === 'overall'; });
+          if (overall) newRecords[abbr] = overall.summary;
+        });
+
+        if (!comp.status || !comp.status.type || !comp.status.type.completed) return;
         const winnerComp = competitors.find(function (c) { return c.winner === true; });
         const loserComp = competitors.find(function (c) { return c.winner === false; });
         if (!winnerComp) return; // tie, or not yet finalized
@@ -395,8 +412,7 @@ function pullScores() {
       }
     }
 
-    const newRecords = fetchTeamRecords_();
-    if (newRecords && JSON.stringify(newRecords) !== JSON.stringify(shared.teamRecords || {})) {
+    if (Object.keys(newRecords).length && JSON.stringify(newRecords) !== JSON.stringify(shared.teamRecords || {})) {
       shared.teamRecords = newRecords;
       changed = true;
     }
@@ -406,28 +422,6 @@ function pullScores() {
     }
   } finally {
     lock.releaseLock();
-  }
-}
-
-/* Pulls every team's current W-L record in one request (ESPN's standings
-   feed), rather than 32 separate per-team calls. Returns null on failure
-   so a transient outage never wipes out yesterday's records. */
-function fetchTeamRecords_() {
-  try {
-    const url = 'https://site.api.espn.com/apis/v2/sports/football/nfl/standings?season=' + SEASON_YEAR;
-    const data = JSON.parse(UrlFetchApp.fetch(url, { muteHttpExceptions: true }).getContentText());
-    const records = {};
-    (data.children || []).forEach(function (conf) {
-      const entries = (conf.standings && conf.standings.entries) || [];
-      entries.forEach(function (entry) {
-        const code = espnAbbr_(entry.team.abbreviation);
-        const overall = (entry.stats || []).find(function (s) { return s.name === 'overall'; });
-        if (overall) records[code] = overall.displayValue;
-      });
-    });
-    return Object.keys(records).length ? records : null;
-  } catch (err) {
-    return null;
   }
 }
 
