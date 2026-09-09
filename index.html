@@ -105,6 +105,12 @@ h1.brand{font-size:clamp(28px,5vw,40px); line-height:0.95;}
 .progress-fill{height:100%; background:linear-gradient(90deg, var(--accent), var(--accent-strong)); transition:width .3s ease;}
 
 /* tabs */
+.tabs-wrap{position:relative;}
+.tabs-wrap::after{
+  content:''; position:absolute; top:0; right:0; bottom:1px; width:28px;
+  background:linear-gradient(to right, transparent, var(--bg));
+  pointer-events:none;
+}
 .tabs{
   display:flex; gap:4px; overflow-x:auto; padding:14px 0 0;
   border-bottom:1px solid var(--line); scrollbar-width:none;
@@ -262,6 +268,16 @@ legend{padding:0 6px; font-weight:700; font-size:13px; text-transform:uppercase;
 .rules-list b{color:var(--ink);}
 [hidden]{display:none !important;}
 .boot-loading{display:flex; align-items:center; justify-content:center; min-height:60vh; color:var(--ink-soft); font-size:14px;}
+
+@media (max-width:480px){
+  /* Prevents iOS Safari's auto-zoom-on-focus for form fields under 16px. */
+  select, input[type="text"], input[type="password"], input[type="date"], input[type="time"], input[type="number"]{
+    font-size:16px;
+  }
+  .tab-btn{padding:10px 11px; font-size:13.5px;}
+  .topbar-inner{padding:16px 16px 14px;}
+  .week-pill{padding:7px 12px;}
+}
 </style>
 </head>
 <body>
@@ -532,15 +548,17 @@ function render(){
   document.getElementById('app').innerHTML = h`
     ${renderTopbar(cw)}
     <div class="wrap">
-      <div class="tabs" role="tablist">
-        ${tabBtn('week','This Week')}
-        ${tabBtn('schedule','Schedule')}
-        ${tabBtn('standings','Standings')}
-        ${tabBtn('bank','Team Bank')}
-        ${tabBtn('history','History')}
-        ${wildcardTabVisible()? tabBtn('wildcard','Wild Card') : ''}
-        ${tabBtn('rules','Rules')}
-        ${tabBtn('admin','Admin')}
+      <div class="tabs-wrap">
+        <div class="tabs" role="tablist">
+          ${tabBtn('week','This Week')}
+          ${tabBtn('schedule','Schedule')}
+          ${tabBtn('standings','Standings')}
+          ${tabBtn('bank','Team Bank')}
+          ${tabBtn('history','History')}
+          ${wildcardTabVisible()? tabBtn('wildcard','Wild Card') : ''}
+          ${tabBtn('rules','Rules')}
+          ${tabBtn('admin','Admin')}
+        </div>
       </div>
       <main>
         ${UI.tab==='week' ? renderWeekTab(cw) : ''}
