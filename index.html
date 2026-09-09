@@ -198,6 +198,9 @@ select:focus, input:focus{border-color:var(--accent);}
 .team-btn:disabled{cursor:not-allowed; opacity:0.5;}
 .tb-name{font-size:13px; font-weight:600;}
 .tb-reason{font-size:10.5px; color:var(--danger); text-transform:uppercase; letter-spacing:0.04em; font-weight:700;}
+.tb-head{display:flex; align-items:center; gap:7px;}
+.team-logo{width:20px; height:20px; object-fit:contain; flex-shrink:0;}
+.team-logo.sm{width:15px; height:15px;}
 
 /* standings */
 table{width:100%; border-collapse:collapse;}
@@ -222,6 +225,7 @@ tr:last-child td{border-bottom:none;}
   display:flex; flex-direction:column; gap:2px; background:var(--surface);
 }
 .team-chip .code{font-family:'JetBrains Mono',monospace; font-size:13px;}
+.team-chip .head{display:flex; align-items:center; gap:6px;}
 .team-chip.used{background:var(--ink); color:var(--bg); border-color:var(--ink);}
 .team-chip.used .code{color:var(--bg);}
 .team-chip.used .wk{color:var(--ink-faint); font-size:10px;}
@@ -516,6 +520,8 @@ async function pollForUpdates(){
 /* ---------- render ---------- */
 function h(strings,...vals){ return strings.map((s,i)=>s+(vals[i]??'')).join(''); }
 function esc(s){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function logoUrl(code){ return `https://a.espncdn.com/i/teamlogos/nfl/500/${code.toLowerCase()}.png`; }
+function logoImg(code, cls){ return `<img class="team-logo ${cls||''}" src="${logoUrl(code)}" alt="" onerror="this.style.display='none'">`; }
 
 function render(){
   const cw = currentWeek();
@@ -656,7 +662,7 @@ function renderWeekTab(cw){
                     const usable = availCodes.has(code) || selected;
                     const reason = !usable ? teamUnavailableReason(sel, cw, code) : '';
                     return `${i>0?'<span class="tb-at">@</span>':''}<button type="button" class="team-btn ${selected?'selected':''}" data-action="toggle-pick" data-team="${code}" data-week="${cw}" ${usable?'':'disabled'}>
-                      <span class="tb-name">${esc(t.name)}</span>
+                      <span class="tb-head">${logoImg(code)}<span class="tb-name">${esc(t.name)}</span></span>
                       ${reason?`<span class="tb-reason">${esc(reason)}</span>`:''}
                     </button>`;
                   }).join('')}
@@ -751,7 +757,7 @@ function renderBankTab(){
                 const isUsed = used.has(t.code);
                 let wk = '';
                 if(isUsed){ for(const w of WEEKS){ const pk=sel.picks[w]; if(pk&&(pk.a===t.code||pk.b===t.code)){wk='Wk '+w; break;} } }
-                return `<div class="team-chip ${isUsed?'used':''}"><span class="code">${t.code}</span>${isUsed?`<span class="wk">${wk}</span>`:''}</div>`;
+                return `<div class="team-chip ${isUsed?'used':''}"><span class="head">${logoImg(t.code,'sm')}<span class="code">${t.code}</span></span>${isUsed?`<span class="wk">${wk}</span>`:''}</div>`;
               }).join('')}
             </div>
           </div>
@@ -783,7 +789,7 @@ function renderScheduleTab(cw){
       <div style="margin-top:16px; display:flex; flex-direction:column; gap:6px;">
         ${games.map(g=>`
           <div class="pick-row">
-            <span><b>${esc(TEAM_BY_CODE[g.away]?.name||g.away)}</b> @ <b>${esc(TEAM_BY_CODE[g.home]?.name||g.home)}</b></span>
+            <span style="display:flex; align-items:center; gap:6px;">${logoImg(g.away,'sm')}<b>${esc(TEAM_BY_CODE[g.away]?.name||g.away)}</b> @ ${logoImg(g.home,'sm')}<b>${esc(TEAM_BY_CODE[g.home]?.name||g.home)}</b></span>
             <span class="tiny mono">${esc(fmtGameTime(g.kickoff))}</span>
           </div>
         `).join('') || `<div class="tiny">No schedule data for this week.</div>`}
@@ -816,9 +822,9 @@ function renderHistoryTab(){
             const bHit = res.entered && res.winners.includes(pk.b);
             return `<div class="pick-row">
               <span>${esc(p.name)}${pk.source==='auto'?' <span class="tiny">(auto)</span>':''}</span>
-              <span class="mono">
-                <span class="check ${res.entered?(aHit?'hit':'miss'):''}">${pk.a}</span> &middot;
-                <span class="check ${res.entered?(bHit?'hit':'miss'):''}">${pk.b}</span>
+              <span class="mono" style="display:flex; align-items:center; gap:8px;">
+                <span class="check ${res.entered?(aHit?'hit':'miss'):''}" style="display:flex; align-items:center; gap:4px;">${logoImg(pk.a,'sm')}${pk.a}</span>
+                <span class="check ${res.entered?(bHit?'hit':'miss'):''}" style="display:flex; align-items:center; gap:4px;">${logoImg(pk.b,'sm')}${pk.b}</span>
               </span>
             </div>`;
           }).join('')}
@@ -1048,7 +1054,7 @@ function renderResultsBody(){
                 const opp = teams[1-i];
                 const won = res.winners.includes(code);
                 return `${i>0?'<span class="tb-at">@</span>':''}<button type="button" class="team-btn ${won?'selected':''}" data-action="toggle-result" data-week="${w}" data-team="${code}" data-opponent="${opp}">
-                  <span class="tb-name">${esc(t.name)}</span>
+                  <span class="tb-head">${logoImg(code)}<span class="tb-name">${esc(t.name)}</span></span>
                   ${won?`<span class="tb-reason" style="color:var(--accent-strong);">Winner</span>`:''}
                 </button>`;
               }).join('')}
