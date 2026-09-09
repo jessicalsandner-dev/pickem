@@ -1,0 +1,1266 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sandner Pick 'Em</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800&family=Source+Sans+3:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<style>
+:root{
+  color-scheme: light dark;
+  --bg:#F2F4F5;
+  --surface:#FFFFFF;
+  --surface-2:#E5E8EA;
+  --ink:#0A0B0D;
+  --ink-soft:#4B5359;
+  --ink-faint:#868D93;
+  --line:rgba(10,11,13,0.15);
+  --accent:#0076B6;
+  --accent-strong:#00507D;
+  --accent-wash:#DCEEF8;
+  --gold:#5C6570;
+  --gold-wash:#E4E7EA;
+  --danger:#AF3A2C;
+  --danger-wash:#F3DDD7;
+  --focus:#0076B6;
+  --shadow:0 1px 2px rgba(10,11,13,0.06), 0 8px 24px -12px rgba(10,11,13,0.22);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0A0B0D;
+    --surface:#17191C;
+    --surface-2:#212427;
+    --ink:#F1F2F3;
+    --ink-soft:#B0B7BC;
+    --ink-faint:#73797E;
+    --line:rgba(241,242,243,0.14);
+    --accent:#3FA9E0;
+    --accent-strong:#7CC7EE;
+    --accent-wash:#0E2E3E;
+    --gold:#B0B7BC;
+    --gold-wash:#262A2D;
+    --danger:#E2795F;
+    --danger-wash:#3A241E;
+    --shadow:0 1px 2px rgba(0,0,0,0.35), 0 8px 24px -12px rgba(0,0,0,0.55);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0A0B0D;
+  --surface:#17191C;
+  --surface-2:#212427;
+  --ink:#F1F2F3;
+  --ink-soft:#B0B7BC;
+  --ink-faint:#73797E;
+  --line:rgba(241,242,243,0.14);
+  --accent:#3FA9E0;
+  --accent-strong:#7CC7EE;
+  --accent-wash:#0E2E3E;
+  --gold:#B0B7BC;
+  --gold-wash:#262A2D;
+  --danger:#E2795F;
+  --danger-wash:#3A241E;
+  --shadow:0 1px 2px rgba(0,0,0,0.35), 0 8px 24px -12px rgba(0,0,0,0.55);
+}
+
+*{box-sizing:border-box;}
+html,body{height:100%;}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:'Source Sans 3', system-ui, -apple-system, sans-serif;
+  font-size:15px; line-height:1.5;
+}
+h1,h2,h3,.display{
+  font-family:'Big Shoulders Display', 'Arial Narrow', sans-serif;
+  font-weight:800; text-transform:uppercase; letter-spacing:0.02em;
+  text-wrap:balance; color:var(--ink); margin:0;
+}
+.mono{ font-family:'JetBrains Mono', ui-monospace, monospace; font-variant-numeric:tabular-nums; }
+a{color:var(--accent-strong);}
+button{font-family:inherit;}
+img{max-width:100%;}
+:focus-visible{outline:2px solid var(--focus); outline-offset:2px;}
+
+.wrap{max-width:1040px; margin:0 auto; padding:0 16px 64px;}
+
+/* header */
+.topbar{
+  background:var(--surface); border-bottom:1px solid var(--line);
+}
+.topbar-inner{
+  max-width:1040px; margin:0 auto; padding:20px 16px 16px;
+  display:flex; flex-wrap:wrap; gap:16px; align-items:flex-end; justify-content:space-between;
+}
+.brand-eyebrow{
+  font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:var(--gold);
+  font-weight:700; margin-bottom:2px;
+}
+h1.brand{font-size:clamp(28px,5vw,40px); line-height:0.95;}
+.week-pill{
+  display:flex; align-items:center; gap:10px; background:var(--surface-2);
+  border:1px solid var(--line); border-radius:999px; padding:8px 16px;
+}
+.week-pill .num{font-family:'Big Shoulders Display',sans-serif; font-weight:800; font-size:20px;}
+.week-pill .meta{font-size:12px; color:var(--ink-soft);}
+.progress-track{height:4px; background:var(--surface-2); width:100%;}
+.progress-fill{height:100%; background:var(--accent); transition:width .3s ease;}
+
+/* tabs */
+.tabs{
+  display:flex; gap:4px; overflow-x:auto; padding:14px 0 0;
+  border-bottom:1px solid var(--line); scrollbar-width:none;
+}
+.tabs::-webkit-scrollbar{display:none;}
+.tab-btn{
+  appearance:none; border:none; background:none; cursor:pointer;
+  font-family:'Source Sans 3',sans-serif; font-weight:600; font-size:14px;
+  color:var(--ink-soft); padding:10px 14px; border-bottom:2px solid transparent;
+  white-space:nowrap;
+}
+.tab-btn[aria-selected="true"]{color:var(--accent-strong); border-bottom-color:var(--accent);}
+.tab-btn:hover{color:var(--ink);}
+
+main{padding-top:24px; display:flex; flex-direction:column; gap:24px;}
+
+.card{
+  background:var(--surface); border:1px solid var(--line); border-radius:14px;
+  padding:20px; box-shadow:var(--shadow);
+}
+.card + .card{margin-top:0;}
+.section-title{font-size:22px; margin-bottom:4px;}
+.section-sub{color:var(--ink-soft); font-size:13.5px; margin-bottom:16px;}
+
+.banner{
+  border-radius:12px; padding:14px 16px; font-size:14px; display:flex; gap:10px; align-items:flex-start;
+  border:1px solid var(--line);
+}
+.banner.gold{background:var(--gold-wash); border-color:transparent;}
+.banner.danger{background:var(--danger-wash); border-color:transparent;}
+.banner.accent{background:var(--accent-wash); border-color:transparent;}
+.banner b{font-weight:700;}
+
+/* roster status grid */
+.roster-grid{
+  display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:8px;
+}
+.roster-chip{
+  border:1px solid var(--line); border-radius:10px; padding:9px 11px;
+  display:flex; flex-direction:column; gap:3px; background:var(--surface);
+}
+.roster-chip .name{font-weight:600; font-size:13.5px;}
+.status-tag{
+  font-size:10.5px; text-transform:uppercase; letter-spacing:0.06em; font-weight:700;
+  padding:2px 7px; border-radius:999px; width:fit-content;
+}
+.status-pending{background:var(--surface-2); color:var(--ink-faint);}
+.status-in{background:var(--accent-wash); color:var(--accent-strong);}
+.status-auto{background:var(--danger-wash); color:var(--danger);}
+.status-locked{background:var(--gold-wash); color:var(--gold);}
+
+/* pin gate */
+.identity-row{display:flex; flex-wrap:wrap; gap:10px; align-items:center;}
+select, input[type="text"], input[type="password"], input[type="date"], input[type="time"], input[type="number"]{
+  font-family:inherit; font-size:14px; padding:9px 12px; border-radius:8px;
+  border:1px solid var(--line); background:var(--surface); color:var(--ink);
+}
+select:focus, input:focus{border-color:var(--accent);}
+.btn{
+  appearance:none; border:none; cursor:pointer; border-radius:8px; padding:9px 16px;
+  font-weight:700; font-size:13.5px; font-family:'Source Sans 3',sans-serif;
+  background:var(--accent); color:#fff; letter-spacing:0.01em;
+}
+.btn:hover{background:var(--accent-strong);}
+.btn.ghost{background:none; color:var(--accent-strong); border:1px solid var(--line);}
+.btn.ghost:hover{background:var(--surface-2);}
+.btn.danger{background:var(--danger); color:#fff;}
+.btn:disabled{opacity:0.45; cursor:not-allowed;}
+.btn-sm{padding:6px 11px; font-size:12.5px;}
+
+.pin-input{width:110px; letter-spacing:0.2em; text-align:center;}
+
+.pick-form{display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end; margin-top:14px;}
+.field label{display:block; font-size:11.5px; text-transform:uppercase; letter-spacing:0.06em; color:var(--ink-soft); margin-bottom:5px; font-weight:700;}
+
+/* schedule-based pick grid */
+.game-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:10px;}
+.game-card{border:1px solid var(--line); border-radius:12px; padding:12px; background:var(--surface-2);}
+.game-time{color:var(--ink-faint); margin-bottom:8px;}
+.game-teams{display:flex; align-items:stretch; gap:8px;}
+.tb-at{align-self:center; color:var(--ink-faint); font-size:12px; font-weight:700;}
+.team-btn{
+  flex:1; appearance:none; cursor:pointer; text-align:left;
+  border:1.5px solid var(--line); border-radius:9px; background:var(--surface);
+  padding:9px 10px; font-family:inherit; color:var(--ink);
+  display:flex; flex-direction:column; gap:2px;
+}
+.team-btn:hover:not(:disabled){border-color:var(--accent);}
+.team-btn.selected{border-color:var(--accent); background:var(--accent-wash);}
+.team-btn.selected .tb-name{color:var(--accent-strong); font-weight:700;}
+.team-btn:disabled{cursor:not-allowed; opacity:0.5;}
+.tb-name{font-size:13px; font-weight:600;}
+.tb-reason{font-size:10.5px; color:var(--danger); text-transform:uppercase; letter-spacing:0.04em; font-weight:700;}
+
+/* standings */
+table{width:100%; border-collapse:collapse;}
+th{
+  text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:0.07em;
+  color:var(--ink-faint); font-weight:700; padding:8px 10px; border-bottom:1px solid var(--line);
+}
+td{padding:11px 10px; border-bottom:1px solid var(--line); font-size:14px;}
+tr:last-child td{border-bottom:none;}
+.rank{font-family:'Big Shoulders Display',sans-serif; font-weight:800; font-size:18px; color:var(--ink-faint); width:34px;}
+.rank.lead{color:var(--gold);}
+.pts{font-family:'JetBrains Mono',monospace; font-weight:700; font-size:16px;}
+.table-scroll{overflow-x:auto;}
+.tie-badge{background:var(--gold-wash); color:var(--gold); font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; padding:2px 7px; border-radius:999px; margin-left:8px;}
+
+/* team bank */
+.division-block{margin-bottom:16px;}
+.division-title{font-size:11px; text-transform:uppercase; letter-spacing:0.08em; color:var(--ink-faint); font-weight:700; margin-bottom:8px;}
+.team-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(96px,1fr)); gap:6px;}
+.team-chip{
+  border:1px solid var(--line); border-radius:8px; padding:7px 9px; font-size:12.5px; font-weight:600;
+  display:flex; flex-direction:column; gap:2px; background:var(--surface);
+}
+.team-chip .code{font-family:'JetBrains Mono',monospace; font-size:13px;}
+.team-chip.used{background:var(--ink); color:var(--bg); border-color:var(--ink);}
+.team-chip.used .code{color:var(--bg);}
+.team-chip.used .wk{color:var(--ink-faint); font-size:10px;}
+:root:not([data-theme="light"]) .team-chip.used, :root[data-theme="dark"] .team-chip.used{background:var(--ink-faint); color:var(--bg);}
+
+/* history */
+.week-entry{border:1px solid var(--line); border-radius:12px; padding:14px 16px; margin-bottom:10px;}
+.week-entry summary{cursor:pointer; font-weight:700; list-style:none; display:flex; justify-content:space-between; align-items:center;}
+.week-entry summary::-webkit-details-marker{display:none;}
+.pick-row{display:flex; justify-content:space-between; padding:6px 0; border-top:1px solid var(--line); font-size:13.5px;}
+.pick-row:first-of-type{border-top:none; margin-top:10px;}
+.check{font-weight:700;}
+.check.hit{color:var(--accent-strong);}
+.check.miss{color:var(--danger);}
+
+/* admin */
+.checkbox-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:6px; margin:10px 0 16px;}
+.checkbox-row{display:flex; align-items:center; gap:7px; font-size:13.5px;}
+fieldset{border:1px solid var(--line); border-radius:12px; padding:14px; margin:0 0 18px;}
+legend{padding:0 6px; font-weight:700; font-size:13px; text-transform:uppercase; letter-spacing:0.05em; color:var(--ink-soft);}
+.player-mgmt-row{display:flex; align-items:center; gap:8px; padding:7px 0; border-bottom:1px solid var(--line); flex-wrap:wrap;}
+.player-mgmt-row:last-child{border-bottom:none;}
+.tiny{font-size:11.5px; color:var(--ink-faint);}
+.toast{
+  position:fixed; bottom:20px; left:50%; transform:translateX(-50%); z-index:50;
+  background:var(--ink); color:var(--bg); padding:10px 18px; border-radius:999px; font-size:13.5px; font-weight:600;
+  box-shadow:var(--shadow);
+}
+.rules-list{margin:0; padding-left:20px; display:flex; flex-direction:column; gap:8px; font-size:13.5px; color:var(--ink-soft);}
+.rules-list b{color:var(--ink);}
+[hidden]{display:none !important;}
+.boot-loading{display:flex; align-items:center; justify-content:center; min-height:60vh; color:var(--ink-soft); font-size:14px;}
+</style>
+</head>
+<body>
+<div id="app"><div class="boot-loading">Loading Sandner Pick 'Em…</div></div>
+
+<script>
+/* ==========================================================================
+   SAVE/LOAD BACKEND — a Google Apps Script Web App backed by a Google Sheet.
+   Replace SHEET_API_URL below with the "Web app URL" from your deployment
+   (Deploy > New deployment > Web app, Execute as: Me, Who has access: Anyone).
+   ========================================================================== */
+const SHEET_API_URL = "https://script.google.com/macros/s/AKfycbz8JzjV7oaU1bV0Wt5skw-6S2Og5JRisZMqHqL6rC4AZ-Cezq55q6l9MKvFpI97g5pL/exec";
+const POLL_MS = 20000; // how often idle viewers re-check the server for updates
+
+/* ---------- static data ---------- */
+const TEAMS = [
+  ["ARI","Arizona Cardinals","NFC West"],["ATL","Atlanta Falcons","NFC South"],
+  ["BAL","Baltimore Ravens","AFC North"],["BUF","Buffalo Bills","AFC East"],
+  ["CAR","Carolina Panthers","NFC South"],["CHI","Chicago Bears","NFC North"],
+  ["CIN","Cincinnati Bengals","AFC North"],["CLE","Cleveland Browns","AFC North"],
+  ["DAL","Dallas Cowboys","NFC East"],["DEN","Denver Broncos","AFC West"],
+  ["DET","Detroit Lions","NFC North"],["GB","Green Bay Packers","NFC North"],
+  ["HOU","Houston Texans","AFC South"],["IND","Indianapolis Colts","AFC South"],
+  ["JAX","Jacksonville Jaguars","AFC South"],["KC","Kansas City Chiefs","AFC West"],
+  ["LAC","Los Angeles Chargers","AFC West"],["LAR","Los Angeles Rams","NFC West"],
+  ["LV","Las Vegas Raiders","AFC West"],["MIA","Miami Dolphins","AFC East"],
+  ["MIN","Minnesota Vikings","NFC North"],["NE","New England Patriots","AFC East"],
+  ["NO","New Orleans Saints","NFC South"],["NYG","New York Giants","NFC East"],
+  ["NYJ","New York Jets","AFC East"],["PHI","Philadelphia Eagles","NFC East"],
+  ["PIT","Pittsburgh Steelers","AFC North"],["SEA","Seattle Seahawks","NFC West"],
+  ["SF","San Francisco 49ers","NFC West"],["TB","Tampa Bay Buccaneers","NFC South"],
+  ["TEN","Tennessee Titans","AFC South"],["WAS","Washington Commanders","NFC East"]
+].map(([code,name,div])=>({code,name,div})).sort((a,b)=>a.name.localeCompare(b.name));
+const TEAM_BY_CODE = Object.fromEntries(TEAMS.map(t=>[t.code,t]));
+const DIVISIONS = [...new Set(TEAMS.map(t=>t.div))].sort();
+const WEEKS = Array.from({length:16},(_,i)=>i+1);
+const DEFAULT_PLAYERS = ["Tbone","JP","Corey","Elaine","Shawn","Kate","Kyle","Mike","Vonnie","Ella","Dylan","Emma","Molly","John","Charlotte","Mikayla","Rozelyn","Quinley","Dawson","Isla","Jaxon"];
+
+/* Real 2026 regular-season schedule, Weeks 1-16, kickoffs in US Eastern time.
+   Sourced from ESPN's schedule pages; four Week 16 games are still
+   flex-scheduled league-wide as of this writing (kickoff: null) — that's a
+   real gap in the NFL's own release, not missing data on our end. */
+const SCHEDULE = {"1":[{"away":"NE","home":"SEA","kickoff":"2026-09-09T20:20:00-04:00"},{"away":"SF","home":"LAR","kickoff":"2026-09-10T06:35:00-04:00"},{"away":"TB","home":"CIN","kickoff":"2026-09-13T13:00:00-04:00"},{"away":"NO","home":"DET","kickoff":"2026-09-13T13:00:00-04:00"},{"away":"NYJ","home":"TEN","kickoff":"2026-09-13T13:00:00-04:00"},{"away":"BAL","home":"IND","kickoff":"2026-09-13T13:00:00-04:00"},{"away":"ATL","home":"PIT","kickoff":"2026-09-13T13:00:00-04:00"},{"away":"CHI","home":"CAR","kickoff":"2026-09-13T13:00:00-04:00"},{"away":"CLE","home":"JAX","kickoff":"2026-09-13T13:00:00-04:00"},{"away":"BUF","home":"HOU","kickoff":"2026-09-13T13:00:00-04:00"},{"away":"MIA","home":"LV","kickoff":"2026-09-13T16:25:00-04:00"},{"away":"GB","home":"MIN","kickoff":"2026-09-13T16:25:00-04:00"},{"away":"WAS","home":"PHI","kickoff":"2026-09-13T16:25:00-04:00"},{"away":"ARI","home":"LAC","kickoff":"2026-09-13T16:25:00-04:00"},{"away":"DAL","home":"NYG","kickoff":"2026-09-13T20:20:00-04:00"},{"away":"DEN","home":"KC","kickoff":"2026-09-14T20:15:00-04:00"}],
+"2":[{"away":"DET","home":"BUF","kickoff":"2026-09-17T20:15:00-04:00"},{"away":"CAR","home":"ATL","kickoff":"2026-09-20T13:00:00-04:00"},{"away":"MIN","home":"CHI","kickoff":"2026-09-20T13:00:00-04:00"},{"away":"PHI","home":"TEN","kickoff":"2026-09-20T13:00:00-04:00"},{"away":"PIT","home":"NE","kickoff":"2026-09-20T13:00:00-04:00"},{"away":"GB","home":"NYJ","kickoff":"2026-09-20T13:00:00-04:00"},{"away":"CLE","home":"TB","kickoff":"2026-09-20T13:00:00-04:00"},{"away":"NO","home":"BAL","kickoff":"2026-09-20T13:00:00-04:00"},{"away":"CIN","home":"HOU","kickoff":"2026-09-20T13:00:00-04:00"},{"away":"JAX","home":"DEN","kickoff":"2026-09-20T16:05:00-04:00"},{"away":"LV","home":"LAC","kickoff":"2026-09-20T16:05:00-04:00"},{"away":"WAS","home":"DAL","kickoff":"2026-09-20T16:25:00-04:00"},{"away":"SEA","home":"ARI","kickoff":"2026-09-20T16:25:00-04:00"},{"away":"MIA","home":"SF","kickoff":"2026-09-20T16:25:00-04:00"},{"away":"IND","home":"KC","kickoff":"2026-09-20T20:20:00-04:00"},{"away":"NYG","home":"LAR","kickoff":"2026-09-21T20:15:00-04:00"}],
+"3":[{"away":"ATL","home":"GB","kickoff":"2026-09-24T20:15:00-04:00"},{"away":"LAC","home":"BUF","kickoff":"2026-09-27T13:00:00-04:00"},{"away":"CAR","home":"CLE","kickoff":"2026-09-27T13:00:00-04:00"},{"away":"NYJ","home":"DET","kickoff":"2026-09-27T13:00:00-04:00"},{"away":"HOU","home":"IND","kickoff":"2026-09-27T13:00:00-04:00"},{"away":"KC","home":"MIA","kickoff":"2026-09-27T13:00:00-04:00"},{"away":"TEN","home":"NYG","kickoff":"2026-09-27T13:00:00-04:00"},{"away":"CIN","home":"PIT","kickoff":"2026-09-27T13:00:00-04:00"},{"away":"SEA","home":"WAS","kickoff":"2026-09-27T13:00:00-04:00"},{"away":"NE","home":"JAX","kickoff":"2026-09-27T13:00:00-04:00"},{"away":"ARI","home":"SF","kickoff":"2026-09-27T16:05:00-04:00"},{"away":"MIN","home":"TB","kickoff":"2026-09-27T16:05:00-04:00"},{"away":"DAL","home":"BAL","kickoff":"2026-09-27T16:25:00-04:00"},{"away":"LV","home":"NO","kickoff":"2026-09-27T16:25:00-04:00"},{"away":"LAR","home":"DEN","kickoff":"2026-09-27T20:20:00-04:00"},{"away":"PHI","home":"CHI","kickoff":"2026-09-28T20:15:00-04:00"}],
+"4":[{"away":"PIT","home":"CLE","kickoff":"2026-10-01T20:15:00-04:00"},{"away":"IND","home":"WAS","kickoff":"2026-10-04T09:30:00-04:00"},{"away":"NE","home":"BUF","kickoff":"2026-10-04T13:00:00-04:00"},{"away":"NYJ","home":"CHI","kickoff":"2026-10-04T13:00:00-04:00"},{"away":"JAX","home":"CIN","kickoff":"2026-10-04T13:00:00-04:00"},{"away":"ARI","home":"NYG","kickoff":"2026-10-04T13:00:00-04:00"},{"away":"LAR","home":"PHI","kickoff":"2026-10-04T13:00:00-04:00"},{"away":"GB","home":"TB","kickoff":"2026-10-04T13:00:00-04:00"},{"away":"TEN","home":"BAL","kickoff":"2026-10-04T13:00:00-04:00"},{"away":"DAL","home":"HOU","kickoff":"2026-10-04T13:00:00-04:00"},{"away":"MIA","home":"MIN","kickoff":"2026-10-04T16:05:00-04:00"},{"away":"KC","home":"LV","kickoff":"2026-10-04T16:25:00-04:00"},{"away":"DEN","home":"SF","kickoff":"2026-10-04T16:25:00-04:00"},{"away":"LAC","home":"SEA","kickoff":"2026-10-04T16:25:00-04:00"},{"away":"DET","home":"CAR","kickoff":"2026-10-04T20:20:00-04:00"},{"away":"ATL","home":"NO","kickoff":"2026-10-05T20:15:00-04:00"}],
+"5":[{"away":"TB","home":"DAL","kickoff":"2026-10-08T20:15:00-04:00"},{"away":"PHI","home":"JAX","kickoff":"2026-10-11T09:30:00-04:00"},{"away":"HOU","home":"TEN","kickoff":"2026-10-11T13:00:00-04:00"},{"away":"CIN","home":"MIA","kickoff":"2026-10-11T13:00:00-04:00"},{"away":"LV","home":"NE","kickoff":"2026-10-11T13:00:00-04:00"},{"away":"MIN","home":"NO","kickoff":"2026-10-11T13:00:00-04:00"},{"away":"CLE","home":"NYJ","kickoff":"2026-10-11T13:00:00-04:00"},{"away":"IND","home":"PIT","kickoff":"2026-10-11T13:00:00-04:00"},{"away":"NYG","home":"WAS","kickoff":"2026-10-11T13:00:00-04:00"},{"away":"DEN","home":"LAC","kickoff":"2026-10-11T16:05:00-04:00"},{"away":"CHI","home":"GB","kickoff":"2026-10-11T16:25:00-04:00"},{"away":"DET","home":"ARI","kickoff":"2026-10-11T16:25:00-04:00"},{"away":"SF","home":"SEA","kickoff":"2026-10-11T16:25:00-04:00"},{"away":"BAL","home":"ATL","kickoff":"2026-10-11T20:20:00-04:00"},{"away":"BUF","home":"LAR","kickoff":"2026-10-12T20:15:00-04:00"}],
+"6":[{"away":"SEA","home":"DEN","kickoff":"2026-10-15T20:15:00-04:00"},{"away":"HOU","home":"JAX","kickoff":"2026-10-18T09:30:00-04:00"},{"away":"CHI","home":"ATL","kickoff":"2026-10-18T13:00:00-04:00"},{"away":"BAL","home":"CLE","kickoff":"2026-10-18T13:00:00-04:00"},{"away":"TEN","home":"IND","kickoff":"2026-10-18T13:00:00-04:00"},{"away":"NYJ","home":"NE","kickoff":"2026-10-18T13:00:00-04:00"},{"away":"NO","home":"NYG","kickoff":"2026-10-18T13:00:00-04:00"},{"away":"CAR","home":"PHI","kickoff":"2026-10-18T13:00:00-04:00"},{"away":"PIT","home":"TB","kickoff":"2026-10-18T13:00:00-04:00"},{"away":"ARI","home":"LAR","kickoff":"2026-10-18T16:05:00-04:00"},{"away":"LAC","home":"KC","kickoff":"2026-10-18T16:25:00-04:00"},{"away":"BUF","home":"LV","kickoff":"2026-10-18T16:25:00-04:00"},{"away":"DAL","home":"GB","kickoff":"2026-10-18T20:20:00-04:00"},{"away":"WAS","home":"SF","kickoff":"2026-10-19T20:15:00-04:00"}],
+"7":[{"away":"NE","home":"CHI","kickoff":"2026-10-22T20:15:00-04:00"},{"away":"PIT","home":"NO","kickoff":"2026-10-25T09:30:00-04:00"},{"away":"SF","home":"ATL","kickoff":"2026-10-25T13:00:00-04:00"},{"away":"CLE","home":"TEN","kickoff":"2026-10-25T13:00:00-04:00"},{"away":"IND","home":"MIN","kickoff":"2026-10-25T13:00:00-04:00"},{"away":"MIA","home":"NYJ","kickoff":"2026-10-25T13:00:00-04:00"},{"away":"TB","home":"CAR","kickoff":"2026-10-25T13:00:00-04:00"},{"away":"CIN","home":"BAL","kickoff":"2026-10-25T13:00:00-04:00"},{"away":"NYG","home":"HOU","kickoff":"2026-10-25T13:00:00-04:00"},{"away":"DEN","home":"ARI","kickoff":"2026-10-25T16:05:00-04:00"},{"away":"GB","home":"DET","kickoff":"2026-10-25T16:25:00-04:00"},{"away":"LAR","home":"LV","kickoff":"2026-10-25T16:25:00-04:00"},{"away":"KC","home":"SEA","kickoff":"2026-10-25T20:20:00-04:00"},{"away":"DAL","home":"PHI","kickoff":"2026-10-26T20:15:00-04:00"}],
+"8":[{"away":"CAR","home":"GB","kickoff":"2026-10-29T20:15:00-04:00"},{"away":"BAL","home":"BUF","kickoff":"2026-11-01T13:00:00-05:00"},{"away":"TEN","home":"CIN","kickoff":"2026-11-01T13:00:00-05:00"},{"away":"ARI","home":"DAL","kickoff":"2026-11-01T13:00:00-05:00"},{"away":"MIN","home":"DET","kickoff":"2026-11-01T13:00:00-05:00"},{"away":"LV","home":"NYJ","kickoff":"2026-11-01T13:00:00-05:00"},{"away":"CLE","home":"PIT","kickoff":"2026-11-01T13:00:00-05:00"},{"away":"ATL","home":"TB","kickoff":"2026-11-01T13:00:00-05:00"},{"away":"IND","home":"JAX","kickoff":"2026-11-01T13:00:00-05:00"},{"away":"LAC","home":"LAR","kickoff":"2026-11-01T16:05:00-05:00"},{"away":"KC","home":"DEN","kickoff":"2026-11-01T16:25:00-05:00"},{"away":"NE","home":"MIA","kickoff":"2026-11-01T16:25:00-05:00"},{"away":"PHI","home":"WAS","kickoff":"2026-11-01T20:20:00-05:00"},{"away":"CHI","home":"SEA","kickoff":"2026-11-02T20:15:00-05:00"}],
+"9":[{"away":"JAX","home":"BAL","kickoff":"2026-11-05T20:15:00-05:00"},{"away":"CIN","home":"ATL","kickoff":"2026-11-08T09:30:00-05:00"},{"away":"DEN","home":"CAR","kickoff":"2026-11-08T13:00:00-05:00"},{"away":"CLE","home":"NO","kickoff":"2026-11-08T13:00:00-05:00"},{"away":"DAL","home":"IND","kickoff":"2026-11-08T13:00:00-05:00"},{"away":"NYG","home":"PHI","kickoff":"2026-11-08T13:00:00-05:00"},{"away":"LAR","home":"WAS","kickoff":"2026-11-08T13:00:00-05:00"},{"away":"DET","home":"MIA","kickoff":"2026-11-08T13:00:00-05:00"},{"away":"NYJ","home":"KC","kickoff":"2026-11-08T13:00:00-05:00"},{"away":"HOU","home":"LAC","kickoff":"2026-11-08T16:05:00-05:00"},{"away":"LV","home":"SF","kickoff":"2026-11-08T16:05:00-05:00"},{"away":"ARI","home":"SEA","kickoff":"2026-11-08T16:25:00-05:00"},{"away":"GB","home":"NE","kickoff":"2026-11-08T16:25:00-05:00"},{"away":"TB","home":"CHI","kickoff":"2026-11-08T20:20:00-05:00"},{"away":"BUF","home":"MIN","kickoff":"2026-11-09T20:15:00-05:00"}],
+"10":[{"away":"WAS","home":"NYG","kickoff":"2026-11-12T20:15:00-05:00"},{"away":"NE","home":"DET","kickoff":"2026-11-15T09:30:00-05:00"},{"away":"KC","home":"ATL","kickoff":"2026-11-15T13:00:00-05:00"},{"away":"HOU","home":"CLE","kickoff":"2026-11-15T13:00:00-05:00"},{"away":"MIN","home":"GB","kickoff":"2026-11-15T13:00:00-05:00"},{"away":"JAX","home":"TEN","kickoff":"2026-11-15T13:00:00-05:00"},{"away":"MIA","home":"IND","kickoff":"2026-11-15T13:00:00-05:00"},{"away":"CAR","home":"NO","kickoff":"2026-11-15T13:00:00-05:00"},{"away":"BUF","home":"NYJ","kickoff":"2026-11-15T13:00:00-05:00"},{"away":"SEA","home":"LV","kickoff":"2026-11-15T16:05:00-05:00"},{"away":"LAR","home":"ARI","kickoff":"2026-11-15T16:05:00-05:00"},{"away":"SF","home":"DAL","kickoff":"2026-11-15T16:25:00-05:00"},{"away":"PIT","home":"CIN","kickoff":"2026-11-15T20:20:00-05:00"},{"away":"LAC","home":"BAL","kickoff":"2026-11-16T20:15:00-05:00"}],
+"11":[{"away":"IND","home":"HOU","kickoff":"2026-11-19T20:15:00-05:00"},{"away":"MIA","home":"BUF","kickoff":"2026-11-22T13:00:00-05:00"},{"away":"NO","home":"CHI","kickoff":"2026-11-22T13:00:00-05:00"},{"away":"TEN","home":"DAL","kickoff":"2026-11-22T13:00:00-05:00"},{"away":"TB","home":"DET","kickoff":"2026-11-22T13:00:00-05:00"},{"away":"ARI","home":"KC","kickoff":"2026-11-22T13:00:00-05:00"},{"away":"JAX","home":"NYG","kickoff":"2026-11-22T13:00:00-05:00"},{"away":"BAL","home":"CAR","kickoff":"2026-11-22T13:00:00-05:00"},{"away":"NYJ","home":"LAC","kickoff":"2026-11-22T16:05:00-05:00"},{"away":"LV","home":"DEN","kickoff":"2026-11-22T16:25:00-05:00"},{"away":"PIT","home":"PHI","kickoff":"2026-11-22T16:25:00-05:00"},{"away":"MIN","home":"SF","kickoff":"2026-11-22T20:20:00-05:00"},{"away":"CIN","home":"WAS","kickoff":"2026-11-23T20:15:00-05:00"}],
+"12":[{"away":"GB","home":"LAR","kickoff":"2026-11-25T20:00:00-05:00"},{"away":"CHI","home":"DET","kickoff":"2026-11-26T13:00:00-05:00"},{"away":"PHI","home":"DAL","kickoff":"2026-11-26T16:30:00-05:00"},{"away":"KC","home":"BUF","kickoff":"2026-11-26T20:20:00-05:00"},{"away":"DEN","home":"PIT","kickoff":"2026-11-27T15:00:00-05:00"},{"away":"ATL","home":"MIN","kickoff":"2026-11-29T13:00:00-05:00"},{"away":"BAL","home":"HOU","kickoff":"2026-11-29T13:00:00-05:00"},{"away":"LV","home":"CLE","kickoff":"2026-11-29T13:00:00-05:00"},{"away":"NYG","home":"IND","kickoff":"2026-11-29T13:00:00-05:00"},{"away":"NYJ","home":"MIA","kickoff":"2026-11-29T13:00:00-05:00"},{"away":"NO","home":"CIN","kickoff":"2026-11-29T13:00:00-05:00"},{"away":"TEN","home":"JAX","kickoff":"2026-11-29T16:05:00-05:00"},{"away":"WAS","home":"ARI","kickoff":"2026-11-29T16:25:00-05:00"},{"away":"SEA","home":"SF","kickoff":"2026-11-29T16:25:00-05:00"},{"away":"NE","home":"LAC","kickoff":"2026-11-29T20:20:00-05:00"},{"away":"CAR","home":"TB","kickoff":"2026-11-30T20:15:00-05:00"}],
+"13":[{"away":"KC","home":"LAR","kickoff":"2026-12-03T20:15:00-05:00"},{"away":"DET","home":"ATL","kickoff":"2026-12-06T13:00:00-05:00"},{"away":"JAX","home":"CHI","kickoff":"2026-12-06T13:00:00-05:00"},{"away":"CIN","home":"CLE","kickoff":"2026-12-06T13:00:00-05:00"},{"away":"WAS","home":"TEN","kickoff":"2026-12-06T13:00:00-05:00"},{"away":"GB","home":"NO","kickoff":"2026-12-06T13:00:00-05:00"},{"away":"SF","home":"NYG","kickoff":"2026-12-06T13:00:00-05:00"},{"away":"LAC","home":"TB","kickoff":"2026-12-06T13:00:00-05:00"},{"away":"MIA","home":"DEN","kickoff":"2026-12-06T16:05:00-05:00"},{"away":"PHI","home":"ARI","kickoff":"2026-12-06T16:05:00-05:00"},{"away":"CAR","home":"MIN","kickoff":"2026-12-06T16:25:00-05:00"},{"away":"BUF","home":"NE","kickoff":"2026-12-06T16:25:00-05:00"},{"away":"HOU","home":"PIT","kickoff":"2026-12-06T20:20:00-05:00"},{"away":"DAL","home":"SEA","kickoff":"2026-12-07T20:15:00-05:00"}],
+"14":[{"away":"MIN","home":"NE","kickoff":"2026-12-10T20:15:00-05:00"},{"away":"ATL","home":"CLE","kickoff":"2026-12-13T13:00:00-05:00"},{"away":"TEN","home":"DET","kickoff":"2026-12-13T13:00:00-05:00"},{"away":"CHI","home":"MIA","kickoff":"2026-12-13T13:00:00-05:00"},{"away":"DEN","home":"NYJ","kickoff":"2026-12-13T13:00:00-05:00"},{"away":"IND","home":"PHI","kickoff":"2026-12-13T13:00:00-05:00"},{"away":"HOU","home":"WAS","kickoff":"2026-12-13T13:00:00-05:00"},{"away":"NO","home":"CAR","kickoff":"2026-12-13T13:00:00-05:00"},{"away":"TB","home":"BAL","kickoff":"2026-12-13T13:00:00-05:00"},{"away":"LAC","home":"LV","kickoff":"2026-12-13T16:05:00-05:00"},{"away":"KC","home":"CIN","kickoff":"2026-12-13T16:25:00-05:00"},{"away":"LAR","home":"SF","kickoff":"2026-12-13T16:25:00-05:00"},{"away":"NYG","home":"SEA","kickoff":"2026-12-13T16:25:00-05:00"},{"away":"BUF","home":"GB","kickoff":"2026-12-13T20:20:00-05:00"},{"away":"PIT","home":"JAX","kickoff":"2026-12-14T20:15:00-05:00"}],
+"15":[{"away":"SF","home":"LAC","kickoff":"2026-12-17T20:15:00-05:00"},{"away":"SEA","home":"PHI","kickoff":"2026-12-19T17:00:00-05:00"},{"away":"CHI","home":"BUF","kickoff":"2026-12-19T20:20:00-05:00"},{"away":"MIA","home":"GB","kickoff":"2026-12-20T13:00:00-05:00"},{"away":"IND","home":"TEN","kickoff":"2026-12-20T13:00:00-05:00"},{"away":"CLE","home":"NYG","kickoff":"2026-12-20T13:00:00-05:00"},{"away":"BAL","home":"PIT","kickoff":"2026-12-20T13:00:00-05:00"},{"away":"NO","home":"TB","kickoff":"2026-12-20T13:00:00-05:00"},{"away":"ATL","home":"WAS","kickoff":"2026-12-20T13:00:00-05:00"},{"away":"CIN","home":"CAR","kickoff":"2026-12-20T13:00:00-05:00"},{"away":"JAX","home":"HOU","kickoff":"2026-12-20T13:00:00-05:00"},{"away":"NYJ","home":"ARI","kickoff":"2026-12-20T16:05:00-05:00"},{"away":"DEN","home":"LV","kickoff":"2026-12-20T16:25:00-05:00"},{"away":"DAL","home":"LAR","kickoff":"2026-12-20T16:25:00-05:00"},{"away":"DET","home":"MIN","kickoff":"2026-12-20T20:20:00-05:00"},{"away":"NE","home":"KC","kickoff":"2026-12-21T20:15:00-05:00"}],
+"16":[{"away":"HOU","home":"PHI","kickoff":"2026-12-24T20:15:00-05:00"},{"away":"GB","home":"CHI","kickoff":"2026-12-25T13:00:00-05:00"},{"away":"BUF","home":"DEN","kickoff":"2026-12-25T16:30:00-05:00"},{"away":"LAR","home":"SEA","kickoff":"2026-12-25T20:15:00-05:00"},{"away":"LAC","home":"MIA","kickoff":"2026-12-27T13:00:00-05:00"},{"away":"ARI","home":"NO","kickoff":"2026-12-27T13:00:00-05:00"},{"away":"NE","home":"NYJ","kickoff":"2026-12-27T13:00:00-05:00"},{"away":"CLE","home":"BAL","kickoff":"2026-12-27T13:00:00-05:00"},{"away":"TEN","home":"LV","kickoff":"2026-12-27T16:05:00-05:00"},{"away":"SF","home":"KC","kickoff":"2026-12-27T16:25:00-05:00"},{"away":"JAX","home":"DAL","kickoff":"2026-12-27T20:20:00-05:00"},{"away":"NYG","home":"DET","kickoff":"2026-12-28T20:15:00-05:00"},{"away":"TB","home":"ATL","kickoff":null},{"away":"CIN","home":"IND","kickoff":null},{"away":"WAS","home":"MIN","kickoff":null},{"away":"CAR","home":"PIT","kickoff":null}]};
+
+function uid(prefix){return prefix+"_"+Math.random().toString(36).slice(2,9);}
+
+function defaultState(){
+  return {
+    league:"Sandner Pick 'Em League",
+    season:2026,
+    week1Deadline:null,
+    weekOverrides:{},
+    adminPin:null,
+    players: DEFAULT_PLAYERS.map(name=>({id:uid("p"), name, pin:null, picks:{}})),
+    weekResults: Object.fromEntries(WEEKS.map(w=>[w,{entered:false,winners:[]}])),
+    wildcard:{active:false, games:[], picks:{}, results:{}}
+  };
+}
+
+/* ---------- state (loaded async from the Sheet — see boot at bottom) ---------- */
+let STATE = null;
+let lastSavedJson = null; // used to skip redundant polling re-renders
+
+const UI = Object.assign({
+  tab:'week', selectedPlayerId:null, unlockedIds:[], bankPlayerId:null,
+  adminUnlocked:false, pendingPinName:null, expandedWeeks:[], scheduleWeek:null, draft:null
+}, JSON.parse(sessionStorage.getItem('pickem_ui')||'{}'));
+
+function saveUI(){ sessionStorage.setItem('pickem_ui', JSON.stringify(UI)); }
+
+/* ---------- date helpers ---------- */
+function weekSundayInfo(w){
+  const games = SCHEDULE[w];
+  if(!games) return null;
+  for(const g of games){
+    if(!g.kickoff) continue;
+    const datePart = g.kickoff.slice(0,10);
+    const offset = g.kickoff.slice(19);
+    const dow = new Date(datePart+'T12:00:00Z').getUTCDay();
+    if(dow===0) return {date:datePart, offset};
+  }
+  return null;
+}
+function weekDeadline(w){
+  if(STATE.weekOverrides[w]) return new Date(STATE.weekOverrides[w]);
+  const info = weekSundayInfo(w);
+  if(info) return new Date(`${info.date}T12:30:00${info.offset}`);
+  if(!STATE.week1Deadline) return null;
+  const d = new Date(STATE.week1Deadline);
+  d.setDate(d.getDate() + (w-1)*7);
+  return d;
+}
+function teamKickoff(w, code){
+  const games = SCHEDULE[w];
+  const g = games && games.find(g=>g.away===code || g.home===code);
+  return g && g.kickoff ? new Date(g.kickoff) : null;
+}
+function fmtDT(d){
+  if(!d) return "—";
+  return d.toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'}) + " " +
+         d.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'});
+}
+function fmtGameTime(iso){
+  if(!iso) return "Time TBD (flex)";
+  const d = new Date(iso);
+  return d.toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'}) + " " +
+         d.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'});
+}
+function isPast(d){ return d && d.getTime() <= Date.now(); }
+
+function currentWeek(){
+  for(const w of WEEKS){ const dl=weekDeadline(w); if(!dl || !isPast(dl)) return w; }
+  return 17;
+}
+
+/* ---------- domain logic ---------- */
+function usedTeams(player, throughWeek){
+  const used = new Set();
+  for(const w of WEEKS){
+    if(throughWeek && w>throughWeek) break;
+    const pk = player.picks[w];
+    if(pk){ used.add(pk.a); used.add(pk.b); }
+  }
+  return used;
+}
+function availableTeams(player){
+  const used = usedTeams(player);
+  return TEAMS.filter(t=>!used.has(t.code));
+}
+function weekTeamCodes(week){
+  return new Set((SCHEDULE[week]||[]).flatMap(g=>[g.away,g.home]));
+}
+function availableTeamsForWeek(player, week){
+  const codes = weekTeamCodes(week);
+  return availableTeams(player).filter(t=>codes.has(t.code) && !isPast(teamKickoff(week, t.code)));
+}
+function teamUnavailableReason(player, week, code){
+  const usedWeek = WEEKS.find(w=>player.picks[w] && (player.picks[w].a===code || player.picks[w].b===code));
+  if(usedWeek) return `Used Wk ${usedWeek}`;
+  if(isPast(teamKickoff(week, code))) return 'Already started';
+  return '';
+}
+function alphaAutoPick(player){
+  const avail = availableTeams(player).slice().sort((a,b)=>a.name.localeCompare(b.name));
+  return [avail[0]?.code, avail[1]?.code];
+}
+function reconcileMissedWeeks(){
+  let changed = false;
+  const cw = currentWeek();
+  if(cw===null) return false;
+  for(const player of STATE.players){
+    for(const w of WEEKS){
+      if(w>=cw) break;
+      const dl = weekDeadline(w);
+      if(!isPast(dl)) continue;
+      if(!player.picks[w]){
+        const [a,b] = alphaAutoPick(player);
+        if(a && b){
+          player.picks[w] = {a,b,source:'auto',ts:new Date().toISOString()};
+          changed = true;
+        }
+      }
+    }
+  }
+  return changed;
+}
+function weekScore(player, w){
+  const res = STATE.weekResults[w];
+  const pk = player.picks[w];
+  if(!res || !res.entered || !pk) return 0;
+  let s = 0;
+  if(res.winners.includes(pk.a)) s++;
+  if(res.winners.includes(pk.b)) s++;
+  return s;
+}
+function totalScore(player){
+  return WEEKS.reduce((s,w)=>s+weekScore(player,w),0);
+}
+function standings(){
+  return STATE.players.map(p=>({p, pts:totalScore(p)})).sort((a,b)=>b.pts-a.pts);
+}
+function seasonComplete(){
+  return STATE.weekResults[16] && STATE.weekResults[16].entered;
+}
+function tiedLeaders(){
+  if(!seasonComplete()) return [];
+  const s = standings();
+  if(!s.length) return [];
+  const top = s[0].pts;
+  return s.filter(r=>r.pts===top).map(r=>r.p);
+}
+
+/* ---------- save/load plumbing (Google Sheet via Apps Script) ---------- */
+function showToast(msg){
+  const t = document.createElement('div');
+  t.className = 'toast'; t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(), 3200);
+}
+
+async function loadState(){
+  const res = await fetch(SHEET_API_URL, {cache:'no-store'});
+  if(!res.ok) throw new Error('Load failed: '+res.status);
+  const data = await res.json();
+  return (data && data.league) ? data : null;
+}
+
+let saving = false;
+async function persist(){
+  render();
+  const json = JSON.stringify(STATE);
+  lastSavedJson = json;
+  saving = true;
+  try{
+    const res = await fetch(SHEET_API_URL, {
+      method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'}, // avoids a CORS preflight
+      body: json
+    });
+    const result = await res.json().catch(()=>({ok:false}));
+    if(!result.ok){ showToast("Couldn't save — try again in a moment."); }
+  }catch(e){
+    showToast("Couldn't save — check your connection and try again.");
+  }finally{
+    saving = false;
+  }
+}
+
+/* Poll for changes made by other viewers. Skips re-rendering if nothing
+   changed, and never clobbers state while a local save is in flight. */
+async function pollForUpdates(){
+  if(saving) return;
+  try{
+    const fresh = await loadState();
+    if(!fresh) return;
+    const freshJson = JSON.stringify(fresh);
+    if(freshJson === lastSavedJson) return;
+    STATE = fresh;
+    lastSavedJson = freshJson;
+    if(reconcileMissedWeeks()){ await persist(); }
+    else { render(); }
+  }catch(e){ /* transient network hiccup — try again next tick */ }
+}
+
+/* ---------- render ---------- */
+function h(strings,...vals){ return strings.map((s,i)=>s+(vals[i]??'')).join(''); }
+function esc(s){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function render(){
+  const cw = currentWeek();
+  document.getElementById('app').innerHTML = h`
+    ${renderTopbar(cw)}
+    <div class="wrap">
+      <div class="tabs" role="tablist">
+        ${tabBtn('week','This Week')}
+        ${tabBtn('schedule','Schedule')}
+        ${tabBtn('standings','Standings')}
+        ${tabBtn('bank','Team Bank')}
+        ${tabBtn('history','History')}
+        ${wildcardTabVisible()? tabBtn('wildcard','Wild Card') : ''}
+        ${tabBtn('rules','Rules')}
+        ${tabBtn('admin','Admin')}
+      </div>
+      <main>
+        ${UI.tab==='week' ? renderWeekTab(cw) : ''}
+        ${UI.tab==='schedule' ? renderScheduleTab(cw) : ''}
+        ${UI.tab==='standings' ? renderStandingsTab() : ''}
+        ${UI.tab==='bank' ? renderBankTab() : ''}
+        ${UI.tab==='history' ? renderHistoryTab() : ''}
+        ${UI.tab==='wildcard' ? renderWildcardTab() : ''}
+        ${UI.tab==='rules' ? renderRulesTab() : ''}
+        ${UI.tab==='admin' ? renderAdminTab() : ''}
+      </main>
+    </div>
+  `;
+  wireEvents();
+}
+
+function wildcardTabVisible(){ return tiedLeaders().length>=2; }
+
+function tabBtn(id,label){
+  return `<button class="tab-btn" role="tab" data-tab="${id}" aria-selected="${UI.tab===id}">${esc(label)}</button>`;
+}
+
+function renderTopbar(cw){
+  const total = 16;
+  const shown = cw===null? 0 : Math.min(cw-1,16);
+  const pct = Math.round((shown/total)*100);
+  let weekLabel, weekMeta;
+  if(cw===null){ weekLabel='Setup'; weekMeta='No schedule data for this week'; }
+  else if(cw>16){ weekLabel='Final'; weekMeta = wildcardTabVisible() ? 'Tied at the top — see Wild Card' : 'Season complete'; }
+  else { const dl = weekDeadline(cw); weekLabel = 'Wk '+cw; weekMeta = 'Picks lock '+fmtDT(dl); }
+  return `
+    <div class="topbar">
+      <div class="topbar-inner">
+        <div>
+          <div class="brand-eyebrow">Est. this season &middot; ${STATE.players.length} players &middot; 16 weeks</div>
+          <h1 class="brand">${esc(STATE.league)}</h1>
+        </div>
+        <div class="week-pill">
+          <span class="num display">${weekLabel}</span>
+          <span class="meta">${esc(weekMeta)}</span>
+        </div>
+      </div>
+      <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
+    </div>
+  `;
+}
+
+function pinGateBlock(scope){
+  const players = STATE.players;
+  const sel = players.find(p=>p.id===UI.selectedPlayerId);
+  const unlocked = sel && UI.unlockedIds.includes(sel.id);
+  return `
+    <div class="identity-row">
+      <div class="field">
+        <label>Who are you</label>
+        <select data-role="select-player">
+          <option value="">Choose your name…</option>
+          ${players.map(p=>`<option value="${p.id}" ${sel&&sel.id===p.id?'selected':''}>${esc(p.name)}</option>`).join('')}
+        </select>
+      </div>
+      ${sel && !unlocked ? `
+        <div class="field">
+          <label>${sel.pin? 'Your PIN' : 'Create a PIN'}</label>
+          <input class="pin-input mono" type="password" inputmode="numeric" maxlength="6" data-role="pin-input" placeholder="••••">
+        </div>
+        <button class="btn" data-action="unlock-player">${sel.pin? 'Unlock' : 'Set PIN'}</button>
+        ${!sel.pin? `<span class="tiny">First time in — pick any 4–6 digit PIN, you’ll use it every week.</span>`:''}
+      ` : ''}
+      ${sel && unlocked ? `<button class="btn ghost btn-sm" data-action="lock-player">Not ${esc(sel.name)}? Switch</button>` : ''}
+    </div>
+  `;
+}
+
+function pickRevealed(pk, week){
+  if(!pk) return false;
+  const ka = teamKickoff(week, pk.a), kb = teamKickoff(week, pk.b);
+  return isPast(ka) || isPast(kb) || isPast(weekDeadline(week));
+}
+function renderWeekTab(cw){
+  if(cw===null){
+    return `<div class="card"><div class="banner gold"><span>⚠️</span><div>No schedule data for this week yet — check <b>Admin</b>.</div></div></div>`;
+  }
+  if(cw>16){
+    return `<div class="card"><div class="banner accent"><span>🏆</span><div>All 16 weeks are locked in. Check <b>Standings</b>${wildcardTabVisible()?' or the <b>Wild Card</b> tab — there’s a tie at the top':''}.</div></div></div>`;
+  }
+  const dl = weekDeadline(cw);
+  const locked = isPast(dl);
+  const sel = STATE.players.find(p=>p.id===UI.selectedPlayerId);
+  const unlocked = sel && UI.unlockedIds.includes(sel.id);
+  const myPick = sel ? sel.picks[cw] : null;
+  const myFrozen = myPick && (locked || isPast(teamKickoff(cw,myPick.a)) || isPast(teamKickoff(cw,myPick.b)));
+
+  let formBlock = '';
+  if(sel && unlocked){
+    if(myFrozen){
+      formBlock = myPick
+        ? `<div class="banner accent" style="margin-top:14px;"><span>🔒</span><div>Locked in. You had <b>${esc(TEAM_BY_CODE[myPick.a]?.name)}</b> and <b>${esc(TEAM_BY_CODE[myPick.b]?.name)}</b>${myPick.source==='auto'?' — auto-assigned, you missed the deadline.':''}${!locked?' — one of them has already kicked off, so this week is set.':''}</div></div>`
+        : `<div class="banner danger" style="margin-top:14px;">No pick on file and the window’s closed — it’ll auto-fill alphabetically next time the page reloads.</div>`;
+    } else {
+      if(!UI.draft || UI.draft.playerId!==sel.id || UI.draft.week!==cw){
+        UI.draft = {playerId:sel.id, week:cw, a: myPick? myPick.a : null, b: myPick? myPick.b : null};
+        saveUI();
+      }
+      const draft = UI.draft;
+      const availCodes = new Set(availableTeamsForWeek(sel, cw).map(t=>t.code));
+      const games = SCHEDULE[cw] || [];
+      const bothPicked = draft.a && draft.b;
+      const summary = !draft.a && !draft.b ? 'Tap a team in each game you like — pick two winners total.'
+        : bothPicked ? 'Both picked — ready to submit.'
+        : '1 of 2 picked — tap one more.';
+      formBlock = `
+        <div class="tiny" style="margin:14px 0 10px;">${summary}</div>
+        <div class="game-grid">
+          ${games.map(g=>{
+            const teams = [g.away, g.home];
+            return `
+              <div class="game-card">
+                <div class="game-time tiny mono">${esc(fmtGameTime(g.kickoff))}</div>
+                <div class="game-teams">
+                  ${teams.map((code,i)=>{
+                    const t = TEAM_BY_CODE[code];
+                    const selected = draft.a===code || draft.b===code;
+                    const usable = availCodes.has(code) || selected;
+                    const reason = !usable ? teamUnavailableReason(sel, cw, code) : '';
+                    return `${i>0?'<span class="tb-at">@</span>':''}<button type="button" class="team-btn ${selected?'selected':''}" data-action="toggle-pick" data-team="${code}" data-week="${cw}" ${usable?'':'disabled'}>
+                      <span class="tb-name">${esc(t.name)}</span>
+                      ${reason?`<span class="tb-reason">${esc(reason)}</span>`:''}
+                    </button>`;
+                  }).join('')}
+                </div>
+              </div>`;
+          }).join('') || `<div class="tiny">No games scheduled for this week.</div>`}
+        </div>
+        <div class="pick-form">
+          <button class="btn" data-action="submit-pick" data-week="${cw}" data-player="${sel.id}" ${bothPicked?'':'disabled'}>${myPick?'Update picks':'Submit picks'}</button>
+        </div>
+        ${myPick? `<div class="tiny" style="margin-top:8px;">Submitted — you can change these until either team kicks off.</div>`:''}
+      `;
+    }
+  }
+
+  return `
+    <div class="card">
+      <div class="section-title">Week ${cw} picks</div>
+      <div class="section-sub">Two winners, each team spent once all season. Submission window closes ${fmtDT(dl)} — see the <b>Schedule</b> tab for kickoff times. Picking a team that plays before then is on you to lock in early.</div>
+      ${pinGateBlock('week')}
+      ${formBlock}
+    </div>
+    <div class="card">
+      <div class="section-title">Who's in</div>
+      <div class="section-sub">Picks reveal the moment a player's earlier team actually kicks off — not all at once.</div>
+      <div class="roster-grid">
+        ${STATE.players.map(p=>{
+          const pk = p.picks[cw];
+          const revealed = pickRevealed(pk, cw);
+          let tag, cls, detail;
+          if(!pk){ tag='Pending'; cls='status-pending'; detail=''; }
+          else if(pk.source==='auto'){ tag='Auto-picked'; cls='status-auto'; detail = revealed? `${pk.a} / ${pk.b}` : ''; }
+          else if(revealed){ tag='Locked'; cls='status-locked'; detail = `${pk.a} / ${pk.b}`; }
+          else { tag='Submitted'; cls='status-in'; detail=''; }
+          return `<div class="roster-chip"><span class="name">${esc(p.name)}</span><span class="status-tag ${cls}">${tag}</span>${detail?`<span class="tiny mono">${detail}</span>`:''}</div>`;
+        }).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function renderStandingsTab(){
+  const rows = standings();
+  const leaders = tiedLeaders();
+  return `
+    <div class="card">
+      <div class="section-title">Standings</div>
+      <div class="section-sub">1 point per correct winner &middot; best possible season is 32.</div>
+      ${!WEEKS.some(w=>STATE.weekResults[w].entered)? `<div class="banner accent" style="margin-bottom:16px;"><span>ℹ️</span><div>Everyone shows 0 because no weekly results have been entered yet — scores populate once the commissioner checks off winners in <b>Admin</b>.</div></div>` : ''}
+      ${leaders.length>=2? `<div class="banner gold" style="margin-bottom:16px;"><span>🏆</span><div><b>${leaders.map(p=>esc(p.name)).join(', ')}</b> finished tied atop the standings — head to the <b>Wild Card</b> tab.</div></div>` : ''}
+      <div class="table-scroll">
+      <table>
+        <thead><tr><th>Rank</th><th>Player</th><th>Weeks played</th><th>Points</th></tr></thead>
+        <tbody>
+          ${rows.map((r,i)=>{
+            const played = WEEKS.filter(w=>r.p.picks[w] && STATE.weekResults[w].entered).length;
+            const isLead = i===0;
+            return `<tr>
+              <td class="rank ${isLead?'lead':''}">${i+1}</td>
+              <td>${esc(r.p.name)}${isLead && leaders.length>=2?'<span class="tie-badge">Tied</span>':''}</td>
+              <td class="tiny">${played} / 16</td>
+              <td class="pts">${r.pts}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+      </div>
+    </div>
+  `;
+}
+
+function renderBankTab(){
+  const players = STATE.players;
+  const sel = players.find(p=>p.id===UI.bankPlayerId) || players[0];
+  const used = sel? usedTeams(sel) : new Set();
+  return `
+    <div class="card">
+      <div class="section-title">Team bank</div>
+      <div class="section-sub">Every team is a single bullet. Once spent, it's off the board for the rest of the season.</div>
+      <div class="field" style="max-width:260px;">
+        <label>Viewing</label>
+        <select data-role="select-bank-player">
+          ${players.map(p=>`<option value="${p.id}" ${sel&&sel.id===p.id?'selected':''}>${esc(p.name)}</option>`).join('')}
+        </select>
+      </div>
+      <div style="margin-top:16px;">
+        ${DIVISIONS.map(div=>`
+          <div class="division-block">
+            <div class="division-title">${esc(div)}</div>
+            <div class="team-grid">
+              ${TEAMS.filter(t=>t.div===div).map(t=>{
+                const isUsed = used.has(t.code);
+                let wk = '';
+                if(isUsed){ for(const w of WEEKS){ const pk=sel.picks[w]; if(pk&&(pk.a===t.code||pk.b===t.code)){wk='Wk '+w; break;} } }
+                return `<div class="team-chip ${isUsed?'used':''}"><span class="code">${t.code}</span>${isUsed?`<span class="wk">${wk}</span>`:''}</div>`;
+              }).join('')}
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function weekStarted(w){
+  const games = SCHEDULE[w] || [];
+  return games.some(g=>isPast(new Date(g.kickoff||8640000000000000))) || isPast(weekDeadline(w));
+}
+function renderScheduleTab(cw){
+  const w = UI.scheduleWeek || (cw && cw<=16 ? cw : 1);
+  const games = SCHEDULE[w] || [];
+  const playing = new Set(games.flatMap(g=>[g.away,g.home]));
+  const byeTeams = TEAMS.filter(t=>!playing.has(t.code));
+  return `
+    <div class="card">
+      <div class="section-title">Schedule</div>
+      <div class="section-sub">Real 2026 kickoff times, shown in your local time zone.</div>
+      <div class="field" style="max-width:200px;">
+        <label>Week</label>
+        <select data-role="schedule-week">
+          ${WEEKS.map(n=>`<option value="${n}" ${Number(w)===n?'selected':''}>Week ${n}</option>`).join('')}
+        </select>
+      </div>
+      <div style="margin-top:16px; display:flex; flex-direction:column; gap:6px;">
+        ${games.map(g=>`
+          <div class="pick-row">
+            <span><b>${esc(TEAM_BY_CODE[g.away]?.name||g.away)}</b> @ <b>${esc(TEAM_BY_CODE[g.home]?.name||g.home)}</b></span>
+            <span class="tiny mono">${esc(fmtGameTime(g.kickoff))}</span>
+          </div>
+        `).join('') || `<div class="tiny">No schedule data for this week.</div>`}
+      </div>
+      ${byeTeams.length? `<div class="tiny" style="margin-top:14px;">On bye: ${byeTeams.map(t=>t.code).join(', ')}</div>`:''}
+    </div>
+  `;
+}
+
+function renderHistoryTab(){
+  const visibleWeeks = WEEKS.filter(weekStarted);
+  if(!visibleWeeks.length){
+    return `<div class="card"><div class="section-title">History</div><div class="section-sub">Nothing revealed yet — check back once Week 1 kicks off.</div></div>`;
+  }
+  return `
+    <div class="card">
+      <div class="section-title">History</div>
+      <div class="section-sub">A player's picks reveal here as soon as the earlier of their two teams kicks off.</div>
+      ${visibleWeeks.slice().reverse().map(w=>{
+        const res = STATE.weekResults[w];
+        const open = UI.expandedWeeks.includes(w);
+        return `
+        <details class="week-entry" ${open?'open':''} data-week-toggle="${w}">
+          <summary><span>Week ${w}</span><span class="tiny">${res.entered? res.winners.length+' winners entered' : 'Results not entered yet'}</span></summary>
+          ${STATE.players.map(p=>{
+            const pk = p.picks[w];
+            if(!pk) return `<div class="pick-row"><span>${esc(p.name)}</span><span class="tiny">No pick</span></div>`;
+            if(!pickRevealed(pk, w)) return `<div class="pick-row"><span>${esc(p.name)}</span><span class="tiny">Submitted — not revealed yet</span></div>`;
+            const aHit = res.entered && res.winners.includes(pk.a);
+            const bHit = res.entered && res.winners.includes(pk.b);
+            return `<div class="pick-row">
+              <span>${esc(p.name)}${pk.source==='auto'?' <span class="tiny">(auto)</span>':''}</span>
+              <span class="mono">
+                <span class="check ${res.entered?(aHit?'hit':'miss'):''}">${pk.a}</span> &middot;
+                <span class="check ${res.entered?(bHit?'hit':'miss'):''}">${pk.b}</span>
+              </span>
+            </div>`;
+          }).join('')}
+        </details>`;
+      }).join('')}
+    </div>
+  `;
+}
+
+function renderWildcardTab(){
+  const leaders = tiedLeaders();
+  if(leaders.length<2){
+    return `<div class="card"><div class="section-sub">No tiebreaker needed right now.</div></div>`;
+  }
+  const wc = STATE.wildcard;
+  const results = wc.results||{};
+  function correctCount(pid){
+    let c=0;
+    wc.games.forEach(g=>{ const pick=(wc.picks[pid]||{})[g.id]; if(pick && results[g.id] && pick===results[g.id]) c++; });
+    return c;
+  }
+  const decided = wc.games.length>0 && wc.games.every(g=>results[g.id]);
+  return `
+    <div class="card">
+      <div class="section-title">Wild Card tiebreaker</div>
+      <div class="section-sub">${esc(leaders.map(p=>p.name).join(', '))} finished level at the top. Each picks a winner in every Wild Card game — most correct takes the title.</div>
+      ${!wc.games.length? `<div class="banner accent">Waiting on the commissioner to enter the Wild Card matchups in Admin.</div>` : ''}
+      ${wc.games.map(g=>`
+        <div class="pick-row" style="border-top:1px solid var(--line); padding:10px 0;">
+          <span><b>${esc(TEAM_BY_CODE[g.away]?.name||g.away)}</b> @ <b>${esc(TEAM_BY_CODE[g.home]?.name||g.home)}</b>${results[g.id]?` <span class="tiny">→ ${esc(TEAM_BY_CODE[results[g.id]]?.name)} won</span>`:''}</span>
+        </div>
+        <div class="roster-grid" style="margin-bottom:6px;">
+          ${leaders.map(p=>{
+            const pick = (wc.picks[p.id]||{})[g.id];
+            return `<div class="roster-chip"><span class="name">${esc(p.name)}</span><span class="tiny mono">${pick? TEAM_BY_CODE[pick]?.code : '—'}</span></div>`;
+          }).join('')}
+        </div>
+      `).join('')}
+      ${wc.games.length? `
+        <div class="section-title" style="font-size:18px; margin-top:18px;">Tiebreaker leaderboard</div>
+        <div class="table-scroll"><table><thead><tr><th>Player</th><th>Correct</th></tr></thead><tbody>
+          ${leaders.slice().sort((a,b)=>correctCount(b.id)-correctCount(a.id)).map(p=>`<tr><td>${esc(p.name)}</td><td class="pts">${correctCount(p.id)} / ${wc.games.length}</td></tr>`).join('')}
+        </tbody></table></div>
+        ${decided? `<div class="banner gold" style="margin-top:14px;"><span>🏆</span><div>Wild Card round complete.</div></div>`:''}
+      `:''}
+    </div>
+  `;
+}
+
+function renderRulesTab(){
+  return `
+    <div class="card">
+      <div class="section-title">League rules</div>
+      <ol class="rules-list">
+        <li><b>Two picks a week.</b> Two teams you think will win. No spreads, no point totals. Submitted by texting T-Bone, or right here.</li>
+        <li><b>One point each.</b> Right pick = 1 point, wrong pick = 0. Best possible week is 2; best possible season is 32.</li>
+        <li><b>Each team once, all season.</b> Every one of the 32 teams is a single bullet.</li>
+        <li><b>Nobody gets eliminated.</b> Play all 16 weeks regardless of record.</li>
+        <li><b>Sixteen weeks.</b> Weeks 1–16 count. 17 and 18 don't — the season finishes before the holidays.</li>
+        <li><b>Deadline: Sunday 12:30p.</b> Picking a team with a game before 1p Sunday is on your own initiative to submit early.</li>
+        <li><b>No early looks.</b> Other players' picks stay hidden until their game kicks off.</li>
+        <li><b>Miss a week, lose the choice.</b> The commissioner assigns the first two available teams alphabetically.</li>
+        <li><b>Tied for first?</b> Wild Card round: each tied player picks every Wild Card game; most correct wins the title.</li>
+      </ol>
+    </div>
+  `;
+}
+
+function renderAdminTab(){
+  if(!UI.adminUnlocked){
+    return `
+      <div class="card">
+        <div class="section-title">Commissioner access</div>
+        <div class="section-sub">${STATE.adminPin? 'Enter the admin PIN.' : 'No admin PIN set yet — create one now.'}</div>
+        <div class="identity-row">
+          <input class="pin-input mono" type="password" inputmode="numeric" maxlength="6" data-role="admin-pin-input" placeholder="••••">
+          <button class="btn" data-action="unlock-admin">${STATE.adminPin? 'Unlock' : 'Set PIN'}</button>
+        </div>
+      </div>
+    `;
+  }
+  const cw = currentWeek();
+  return `
+    <div class="card">
+      <div class="section-title">Season setup</div>
+      <div class="banner accent" style="margin-bottom:16px;">Deadlines are computed automatically from the real 2026 schedule — each week locks Sunday 12:30p ET. Nothing to set up here unless something needs a manual fix.</div>
+      <fieldset>
+        <legend>Override a week's deadline</legend>
+        <div class="identity-row">
+          <select data-role="ov-week">${WEEKS.map(w=>`<option value="${w}">Week ${w}</option>`).join('')}</select>
+          <input type="date" data-role="ov-date">
+          <input type="time" data-role="ov-time" value="12:30">
+          <button class="btn btn-sm" data-action="save-override">Set</button>
+          <button class="btn ghost btn-sm" data-action="clear-override">Clear</button>
+        </div>
+        <div class="tiny" style="margin-top:6px;">Use this if the NFL flex-schedules a game and it changes when a week should lock (Week 16 currently has 4 games still TBD league-wide).</div>
+      </fieldset>
+      <fieldset>
+        <legend>Legacy Week 1 anchor (fallback only)</legend>
+        <div class="identity-row">
+          <input type="date" data-role="w1-date" value="${STATE.week1Deadline? STATE.week1Deadline.slice(0,10):''}">
+          <input type="time" data-role="w1-time" value="${STATE.week1Deadline? STATE.week1Deadline.slice(11,16):'12:30'}">
+          <button class="btn btn-sm" data-action="save-week1">Save</button>
+        </div>
+        <div class="tiny" style="margin-top:6px;">Only used if a week is ever missing real schedule data. Safe to ignore.</div>
+      </fieldset>
+      <fieldset>
+        <legend>Change admin PIN</legend>
+        <div class="identity-row">
+          <input class="pin-input mono" type="password" inputmode="numeric" maxlength="6" data-role="new-admin-pin" placeholder="new PIN">
+          <button class="btn btn-sm" data-action="change-admin-pin">Save</button>
+        </div>
+      </fieldset>
+    </div>
+
+    <div class="card">
+      <div class="section-title">Players (${STATE.players.length})</div>
+      <div class="section-sub">Add anyone missing, fix a typo, or reset a forgotten PIN.</div>
+      ${STATE.players.map(p=>`
+        <div class="player-mgmt-row">
+          <input type="text" value="${esc(p.name)}" data-role="rename" data-pid="${p.id}" style="max-width:160px;">
+          <span class="tiny mono">${p.pin? 'PIN set' : 'No PIN yet'}</span>
+          <button class="btn ghost btn-sm" data-action="reset-pin" data-pid="${p.id}">Reset PIN</button>
+          <button class="btn ghost btn-sm" data-action="remove-player" data-pid="${p.id}">Remove</button>
+        </div>
+      `).join('')}
+      <div class="identity-row" style="margin-top:12px;">
+        <input type="text" placeholder="New player name" data-role="new-player-name">
+        <button class="btn btn-sm" data-action="add-player">Add player</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">Enter picks on someone's behalf</div>
+      <div class="section-sub">For picks texted in — pick a player, week, and their two winners. This works any time, even after kickoff, so it's fine to catch up on a backlog of texts.</div>
+      <div class="identity-row">
+        <select data-role="admin-pick-player">${STATE.players.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('')}</select>
+        <select data-role="admin-pick-week">${WEEKS.map(w=>`<option value="${w}" ${cw===w?'selected':''}>Week ${w}</option>`).join('')}</select>
+      </div>
+      <div class="pick-form" id="admin-pick-team-row"></div>
+      <button class="btn" data-action="admin-submit-pick" style="margin-top:10px;">Save pick</button>
+    </div>
+
+    <div class="card">
+      <div class="section-title">Weekly results</div>
+      <div class="section-sub">Tap the winner in each game — no save button, it's live. Every Tuesday morning this also gets pulled in automatically once the prior week's games are final.</div>
+      <div class="identity-row" style="margin-bottom:10px;">
+        <select data-role="results-week">${WEEKS.map(w=>`<option value="${w}" ${cw===w?'selected':''}>Week ${w}</option>`).join('')}</select>
+      </div>
+      <div id="results-body"></div>
+    </div>
+
+    ${tiedLeaders().length>=2 ? `
+    <div class="card">
+      <div class="section-title">Wild Card matchups</div>
+      <div class="section-sub">Add each Wild Card game, then record picks for: ${esc(tiedLeaders().map(p=>p.name).join(', '))}.</div>
+      <div class="identity-row">
+        <select data-role="wc-away">${TEAMS.map(t=>`<option value="${t.code}">${esc(t.name)}</option>`).join('')}</select>
+        <span class="tiny">at</span>
+        <select data-role="wc-home">${TEAMS.map(t=>`<option value="${t.code}">${esc(t.name)}</option>`).join('')}</select>
+        <button class="btn btn-sm" data-action="add-wc-game">Add game</button>
+      </div>
+      ${STATE.wildcard.games.map(g=>`
+        <div class="player-mgmt-row">
+          <span style="min-width:220px;">${esc(TEAM_BY_CODE[g.away]?.name)} @ ${esc(TEAM_BY_CODE[g.home]?.name)}</span>
+          <select data-role="wc-winner" data-game="${g.id}">
+            <option value="">Winner…</option>
+            <option value="${g.away}" ${STATE.wildcard.results[g.id]===g.away?'selected':''}>${g.away}</option>
+            <option value="${g.home}" ${STATE.wildcard.results[g.id]===g.home?'selected':''}>${g.home}</option>
+          </select>
+          ${tiedLeaders().map(p=>`
+            <select data-role="wc-pick" data-game="${g.id}" data-pid="${p.id}">
+              <option value="">${esc(p.name)}’s pick…</option>
+              <option value="${g.away}" ${(STATE.wildcard.picks[p.id]||{})[g.id]===g.away?'selected':''}>${esc(p.name)}: ${g.away}</option>
+              <option value="${g.home}" ${(STATE.wildcard.picks[p.id]||{})[g.id]===g.home?'selected':''}>${esc(p.name)}: ${g.home}</option>
+            </select>
+          `).join('')}
+          <button class="btn ghost btn-sm" data-action="remove-wc-game" data-game="${g.id}">Remove</button>
+        </div>
+      `).join('')}
+    </div>` : ''}
+
+    <div class="card">
+      <button class="btn ghost btn-sm" data-action="lock-admin">Lock admin panel</button>
+    </div>
+  `;
+}
+
+function renderAdminPickTeamRow(){
+  const container = document.getElementById('admin-pick-team-row');
+  if(!container) return;
+  const pid = document.querySelector('[data-role="admin-pick-player"]')?.value;
+  const week = Number(document.querySelector('[data-role="admin-pick-week"]')?.value);
+  const player = STATE.players.find(p=>p.id===pid);
+  if(!player){ container.innerHTML=''; return; }
+  const avail = availableTeams(player);
+  const existing = player.picks[week];
+  const label = t => esc(t.name) + (isPast(teamKickoff(week, t.code)) ? ' (already started)' : '');
+  container.innerHTML = `
+    <div class="field"><label>Winner #1</label><select data-role="admin-pick-a">
+      <option value="">—</option>
+      ${avail.map(t=>`<option value="${t.code}" ${existing&&existing.a===t.code?'selected':''}>${label(t)}</option>`).join('')}
+    </select></div>
+    <div class="field"><label>Winner #2</label><select data-role="admin-pick-b">
+      <option value="">—</option>
+      ${avail.map(t=>`<option value="${t.code}" ${existing&&existing.b===t.code?'selected':''}>${label(t)}</option>`).join('')}
+    </select></div>
+  `;
+}
+
+function renderResultsBody(){
+  const body = document.getElementById('results-body');
+  if(!body) return;
+  const w = Number(document.querySelector('[data-role="results-week"]')?.value);
+  const res = STATE.weekResults[w] || {entered:false,winners:[]};
+  const games = SCHEDULE[w] || [];
+  body.innerHTML = `
+    <div class="game-grid">
+      ${games.map(g=>{
+        const teams = [g.away, g.home];
+        return `
+          <div class="game-card">
+            <div class="game-time tiny mono">${esc(fmtGameTime(g.kickoff))}</div>
+            <div class="game-teams">
+              ${teams.map((code,i)=>{
+                const t = TEAM_BY_CODE[code];
+                const opp = teams[1-i];
+                const won = res.winners.includes(code);
+                return `${i>0?'<span class="tb-at">@</span>':''}<button type="button" class="team-btn ${won?'selected':''}" data-action="toggle-result" data-week="${w}" data-team="${code}" data-opponent="${opp}">
+                  <span class="tb-name">${esc(t.name)}</span>
+                  ${won?`<span class="tb-reason" style="color:var(--accent-strong);">Winner</span>`:''}
+                </button>`;
+              }).join('')}
+            </div>
+          </div>`;
+      }).join('') || `<div class="tiny">No schedule data for this week.</div>`}
+    </div>
+    <div class="tiny" style="margin-top:10px;">${games.length? `Click the winner in each game — it saves instantly and standings update live as you go. ${res.winners.length} of ${games.length} marked so far.` : ''}</div>
+  `;
+}
+
+/* ---------- events ---------- */
+function wireEvents(){
+  const app = document.getElementById('app');
+  app.querySelectorAll('[data-week-toggle]').forEach(d=>d.addEventListener('toggle', ()=>{
+    const w = Number(d.dataset.weekToggle);
+    if(d.open && !UI.expandedWeeks.includes(w)) UI.expandedWeeks.push(w);
+    if(!d.open) UI.expandedWeeks = UI.expandedWeeks.filter(x=>x!==w);
+    saveUI();
+  }));
+  if(document.querySelector('[data-role="admin-pick-player"]')) renderAdminPickTeamRow();
+  if(document.querySelector('[data-role="results-week"]')) renderResultsBody();
+}
+
+let listenersBound = false;
+function bindGlobalListeners(){
+  if(listenersBound) return;
+  listenersBound = true;
+
+  document.addEventListener('click', e=>{
+    const tabEl = e.target.closest('[data-tab]');
+    if(tabEl){ UI.tab = tabEl.dataset.tab; saveUI(); render(); return; }
+    const actionEl = e.target.closest('[data-action]');
+    if(actionEl){ onAction({currentTarget:actionEl}); }
+  });
+
+  document.addEventListener('change', e=>{
+    const t = e.target;
+    const role = t.dataset.role;
+    if(role==='select-player'){ UI.selectedPlayerId = t.value || null; saveUI(); render(); return; }
+    if(role==='select-bank-player'){ UI.bankPlayerId = t.value; saveUI(); render(); return; }
+    if(role==='schedule-week'){ UI.scheduleWeek = Number(t.value); saveUI(); render(); return; }
+    if(role==='admin-pick-player' || role==='admin-pick-week'){ renderAdminPickTeamRow(); return; }
+    if(role==='results-week'){ renderResultsBody(); return; }
+    if(role==='rename'){
+      const p = STATE.players.find(p=>p.id===t.dataset.pid);
+      if(p && t.value.trim()){ p.name = t.value.trim(); persist(); }
+      return;
+    }
+    if(role==='wc-winner'){
+      if(t.value) STATE.wildcard.results[t.dataset.game]=t.value; else delete STATE.wildcard.results[t.dataset.game];
+      persist(); return;
+    }
+    if(role==='wc-pick'){
+      const pid=t.dataset.pid, gid=t.dataset.game;
+      STATE.wildcard.picks[pid] = STATE.wildcard.picks[pid]||{};
+      if(t.value) STATE.wildcard.picks[pid][gid]=t.value; else delete STATE.wildcard.picks[pid][gid];
+      persist(); return;
+    }
+  });
+}
+
+function onAction(e){
+  const btn = e.currentTarget;
+  const action = btn.dataset.action;
+
+  if(action==='unlock-player'){
+    const sel = STATE.players.find(p=>p.id===UI.selectedPlayerId);
+    const pinVal = document.querySelector('[data-role="pin-input"]').value.trim();
+    if(!sel) return;
+    if(!pinVal || pinVal.length<4){ showToast('PIN needs to be at least 4 digits.'); return; }
+    if(!sel.pin){
+      sel.pin = pinVal;
+      UI.unlockedIds.push(sel.id); saveUI();
+      persist();
+    } else if(sel.pin===pinVal){
+      UI.unlockedIds.push(sel.id); saveUI(); render();
+    } else {
+      showToast('Wrong PIN.');
+    }
+    return;
+  }
+  if(action==='lock-player'){
+    UI.unlockedIds = UI.unlockedIds.filter(id=>id!==UI.selectedPlayerId);
+    UI.selectedPlayerId = null; saveUI(); render(); return;
+  }
+  if(action==='toggle-pick'){
+    const code = btn.dataset.team;
+    if(!UI.draft) return;
+    if(UI.draft.a===code){ UI.draft.a=null; }
+    else if(UI.draft.b===code){ UI.draft.b=null; }
+    else if(!UI.draft.a){ UI.draft.a=code; }
+    else if(!UI.draft.b){ UI.draft.b=code; }
+    else { showToast('You already have two picks — tap one to remove it first.'); return; }
+    saveUI(); render();
+    return;
+  }
+  if(action==='submit-pick'){
+    const week = Number(btn.dataset.week);
+    const player = STATE.players.find(p=>p.id===btn.dataset.player);
+    const a = UI.draft && UI.draft.a;
+    const b = UI.draft && UI.draft.b;
+    if(!a || !b){ showToast('Pick two teams.'); return; }
+    if(a===b){ showToast('Pick two different teams.'); return; }
+    player.picks[week] = {a,b,source:'self',ts:new Date().toISOString()};
+    persist();
+    return;
+  }
+  if(action==='unlock-admin'){
+    const pinVal = document.querySelector('[data-role="admin-pin-input"]').value.trim();
+    if(!pinVal || pinVal.length<4){ showToast('PIN needs to be at least 4 digits.'); return; }
+    if(!STATE.adminPin){ STATE.adminPin = pinVal; UI.adminUnlocked = true; saveUI(); persist(); }
+    else if(STATE.adminPin===pinVal){ UI.adminUnlocked = true; saveUI(); render(); }
+    else { showToast('Wrong PIN.'); }
+    return;
+  }
+  if(action==='lock-admin'){ UI.adminUnlocked=false; saveUI(); render(); return; }
+  if(action==='save-week1'){
+    const d = document.querySelector('[data-role="w1-date"]').value;
+    const t = document.querySelector('[data-role="w1-time"]').value || '12:30';
+    if(!d){ showToast('Pick a date.'); return; }
+    STATE.week1Deadline = `${d}T${t}:00`;
+    persist(); return;
+  }
+  if(action==='save-override'){
+    const w = document.querySelector('[data-role="ov-week"]').value;
+    const d = document.querySelector('[data-role="ov-date"]').value;
+    const t = document.querySelector('[data-role="ov-time"]').value || '12:30';
+    if(!d){ showToast('Pick a date.'); return; }
+    STATE.weekOverrides[w] = `${d}T${t}:00`;
+    persist(); return;
+  }
+  if(action==='clear-override'){
+    const w = document.querySelector('[data-role="ov-week"]').value;
+    delete STATE.weekOverrides[w];
+    persist(); return;
+  }
+  if(action==='change-admin-pin'){
+    const pinVal = document.querySelector('[data-role="new-admin-pin"]').value.trim();
+    if(!pinVal || pinVal.length<4){ showToast('PIN needs to be at least 4 digits.'); return; }
+    STATE.adminPin = pinVal; persist(); showToast('Admin PIN updated.'); return;
+  }
+  if(action==='reset-pin'){
+    const p = STATE.players.find(p=>p.id===btn.dataset.pid);
+    if(p){ p.pin=null; persist(); }
+    return;
+  }
+  if(action==='remove-player'){
+    if(!confirm('Remove this player and their picks? This can\'t be undone.')) return;
+    STATE.players = STATE.players.filter(p=>p.id!==btn.dataset.pid);
+    persist(); return;
+  }
+  if(action==='add-player'){
+    const nameInput = document.querySelector('[data-role="new-player-name"]');
+    const name = nameInput.value.trim();
+    if(!name){ showToast('Enter a name.'); return; }
+    STATE.players.push({id:uid('p'), name, pin:null, picks:{}});
+    persist(); return;
+  }
+  if(action==='admin-submit-pick'){
+    const pid = document.querySelector('[data-role="admin-pick-player"]').value;
+    const week = Number(document.querySelector('[data-role="admin-pick-week"]').value);
+    const a = document.querySelector('[data-role="admin-pick-a"]').value;
+    const b = document.querySelector('[data-role="admin-pick-b"]').value;
+    const player = STATE.players.find(p=>p.id===pid);
+    if(!player || !a || !b){ showToast('Pick two teams.'); return; }
+    if(a===b){ showToast('Pick two different teams.'); return; }
+    player.picks[week] = {a,b,source:'admin',ts:new Date().toISOString()};
+    persist(); return;
+  }
+  if(action==='toggle-result'){
+    const w = Number(btn.dataset.week);
+    const code = btn.dataset.team;
+    const opp = btn.dataset.opponent;
+    const res = STATE.weekResults[w] || {entered:false, winners:[]};
+    let winners = res.winners.slice();
+    if(winners.includes(code)) winners = winners.filter(c=>c!==code);
+    else { winners = winners.filter(c=>c!==opp); winners.push(code); }
+    STATE.weekResults[w] = {entered:true, winners};
+    persist(); return;
+  }
+  if(action==='add-wc-game'){
+    const away = document.querySelector('[data-role="wc-away"]').value;
+    const home = document.querySelector('[data-role="wc-home"]').value;
+    if(away===home){ showToast('Pick two different teams.'); return; }
+    STATE.wildcard.games.push({id:uid('g'), away, home});
+    persist(); return;
+  }
+  if(action==='remove-wc-game'){
+    STATE.wildcard.games = STATE.wildcard.games.filter(g=>g.id!==btn.dataset.game);
+    persist(); return;
+  }
+}
+
+/* ---------- boot ---------- */
+(async function boot(){
+  bindGlobalListeners();
+  if(SHEET_API_URL.indexOf('REPLACE_WITH') === 0){
+    document.getElementById('app').innerHTML = '<div class="boot-loading">Setup needed: the app\'s SHEET_API_URL constant hasn\'t been configured yet.</div>';
+    return;
+  }
+  try{
+    STATE = await loadState();
+    if(!STATE){ STATE = defaultState(); await persist(); }
+    else { lastSavedJson = JSON.stringify(STATE); }
+  }catch(e){
+    document.getElementById('app').innerHTML = '<div class="boot-loading">Couldn\'t reach the save server. Check your connection and reload.</div>';
+    return;
+  }
+  if(reconcileMissedWeeks()){ await persist(); } else { render(); }
+  setInterval(pollForUpdates, POLL_MS);
+})();
+</script>
+</body>
+</html>
