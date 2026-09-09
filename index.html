@@ -292,6 +292,14 @@ legend{padding:0 6px; font-weight:700; font-size:13px; text-transform:uppercase;
 const SHEET_API_URL = "https://script.google.com/macros/s/AKfycbz8JzjV7oaU1bV0Wt5skw-6S2Og5JRisZMqHqL6rC4AZ-Cezq55q6l9MKvFpI97g5pL/exec";
 const POLL_MS = 20000; // how often idle viewers re-check the server for updates
 
+/* Which league this page instance shows — e.g. ?league=bishop in the URL.
+   Defaults to sandner so the original link keeps working unchanged. Four
+   players (see SHARED_NAMES server-side) compete in both leagues at once
+   with one shared pick per week; the backend handles that merge, this
+   front-end just asks for "its" league's view. */
+const LEAGUE = (new URLSearchParams(location.search).get('league') || 'sandner').toLowerCase();
+function apiUrl(){ return SHEET_API_URL + '?league=' + encodeURIComponent(LEAGUE); }
+
 /* ---------- static data ---------- */
 const TEAMS = [
   ["ARI","Arizona Cardinals","NFC West"],["ATL","Atlanta Falcons","NFC South"],
@@ -494,7 +502,7 @@ function showToast(msg){
 }
 
 async function loadState(){
-  const res = await fetch(SHEET_API_URL, {cache:'no-store'});
+  const res = await fetch(apiUrl(), {cache:'no-store'});
   if(!res.ok) throw new Error('Load failed: '+res.status);
   const data = await res.json();
   return (data && data.league) ? data : null;
@@ -507,7 +515,7 @@ async function persist(){
   lastSavedJson = json;
   saving = true;
   try{
-    const res = await fetch(SHEET_API_URL, {
+    const res = await fetch(apiUrl(), {
       method:'POST',
       headers:{'Content-Type':'text/plain;charset=utf-8'}, // avoids a CORS preflight
       body: json
@@ -1289,6 +1297,7 @@ function onAction(e){
     STATE = await loadState();
     if(!STATE){ STATE = defaultState(); await persist(); }
     else { lastSavedJson = JSON.stringify(STATE); }
+    if(STATE.league){ document.title = STATE.league; }
   }catch(e){
     document.getElementById('app').innerHTML = '<div class="boot-loading">Couldn\'t reach the save server. Check your connection and reload.</div>';
     return;
