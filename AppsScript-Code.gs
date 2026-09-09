@@ -53,6 +53,7 @@ function defaultShared_() {
   return {
     season: 2026, week1Deadline: null, weekOverrides: {}, adminPin: null,
     weekResults: defaultWeekResults_(),
+    teamRecords: {},
     sharedPlayers: SHARED_NAMES.map(function (name) { return { id: Utilities.getUuid(), name: name, pin: null, picks: {} }; })
   };
 }
@@ -75,6 +76,7 @@ function buildMergedState_(league) {
     weekOverrides: shared.weekOverrides,
     adminPin: shared.adminPin,
     weekResults: shared.weekResults,
+    teamRecords: shared.teamRecords || {},
     wildcard: local.wildcard,
     players: shared.sharedPlayers.concat(local.localPlayers)
   };
@@ -92,6 +94,7 @@ function splitAndSave_(league, state) {
     weekOverrides: state.weekOverrides,
     adminPin: state.adminPin,
     weekResults: state.weekResults,
+    teamRecords: state.teamRecords || {},
     sharedPlayers: sharedPlayers
   });
   writeJson_(LEAGUE_SHEETS[league], {
@@ -175,6 +178,7 @@ function migrateToMultiLeague() {
     weekOverrides: old.weekOverrides,
     adminPin: old.adminPin,
     weekResults: old.weekResults,
+    teamRecords: old.teamRecords || {},
     sharedPlayers: sharedPlayers
   });
 
@@ -391,11 +395,39 @@ function pullScores() {
       }
     }
 
+    const newRecords = fetchTeamRecords_();
+    if (newRecords && JSON.stringify(newRecords) !== JSON.stringify(shared.teamRecords || {})) {
+      shared.teamRecords = newRecords;
+      changed = true;
+    }
+
     if (changed) {
       writeJson_(SHARED_SHEET, shared);
     }
   } finally {
     lock.releaseLock();
+  }
+}
+
+/* Pulls every team's current W-L record in one request (ESPN's standings
+   feed), rather than 32 separate per-team calls. Returns null on failure
+   so a transient outage never wipes out yesterday's records. */
+function fetchTeamRecords_() {
+  try {
+    const url = 'https://site.api.espn.com/apis/v2/sports/football/nfl/standings?season=' + SEASON_YEAR;
+    const data = JSON.parse(UrlFetchApp.fetch(url, { muteHttpExceptions: true }).getContentText());
+    const records = {};
+    (data.children || []).forEach(function (conf) {
+      const entries = (conf.standings && conf.standings.entries) || [];
+      entries.forEach(function (entry) {
+        const code = espnAbbr_(entry.team.abbreviation);
+        const overall = (entry.stats || []).find(function (s) { return s.name === 'overall'; });
+        if (overall) records[code] = overall.displayValue;
+      });
+    });
+    return Object.keys(records).length ? records : null;
+  } catch (err) {
+    return null;
   }
 }
 

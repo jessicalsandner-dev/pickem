@@ -246,6 +246,14 @@ tr.lead-row .pts{color:var(--accent-strong); font-size:18px;}
 .week-entry summary{cursor:pointer; font-weight:700; list-style:none; display:flex; justify-content:space-between; align-items:center;}
 .week-entry summary::-webkit-details-marker{display:none;}
 .pick-row{display:flex; justify-content:space-between; padding:6px 0; border-top:1px solid var(--line); font-size:13.5px;}
+
+/* schedule tab rows */
+.sched-row{
+  display:flex; justify-content:space-between; align-items:flex-start; gap:12px;
+  padding:6px 0; border-top:1px solid var(--line); font-size:13.5px;
+}
+.sched-teams{display:flex; align-items:center; gap:6px; flex-wrap:wrap; flex:1; min-width:0;}
+.sched-time{flex-shrink:0; text-align:right; white-space:nowrap; padding-top:2px;}
 .pick-row:first-of-type{border-top:none; margin-top:10px;}
 .check{font-weight:700;}
 .check.hit{color:var(--accent-strong);}
@@ -299,6 +307,11 @@ const POLL_MS = 20000; // how often idle viewers re-check the server for updates
    front-end just asks for "its" league's view. */
 const LEAGUE = (new URLSearchParams(location.search).get('league') || 'sandner').toLowerCase();
 function apiUrl(){ return SHEET_API_URL + '?league=' + encodeURIComponent(LEAGUE); }
+
+/* Bishop always renders dark, regardless of the visitor's system theme —
+   an at-a-glance way to tell the two leagues' pages apart. Set immediately
+   (before first render) so there's no flash of the light theme first. */
+if(LEAGUE==='bishop'){ document.documentElement.setAttribute('data-theme','dark'); }
 
 /* ---------- static data ---------- */
 const TEAMS = [
@@ -550,6 +563,7 @@ function h(strings,...vals){ return strings.map((s,i)=>s+(vals[i]??'')).join('')
 function esc(s){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function logoUrl(code){ return `https://a.espncdn.com/i/teamlogos/nfl/500/${code.toLowerCase()}.png`; }
 function logoImg(code, cls){ return `<img class="team-logo ${cls||''}" src="${logoUrl(code)}" alt="" onerror="this.style.display='none'">`; }
+function recordText(code){ const r = STATE.teamRecords && STATE.teamRecords[code]; return r ? ` (${r})` : ''; }
 
 function render(){
   const cw = currentWeek();
@@ -692,7 +706,7 @@ function renderWeekTab(cw){
                     const usable = availCodes.has(code) || selected;
                     const reason = !usable ? teamUnavailableReason(sel, cw, code) : '';
                     return `${i>0?'<span class="tb-at">@</span>':''}<button type="button" class="team-btn ${selected?'selected':''}" data-action="toggle-pick" data-team="${code}" data-week="${cw}" ${usable?'':'disabled'}>
-                      <span class="tb-head">${logoImg(code)}<span class="tb-name">${esc(t.name)}</span></span>
+                      <span class="tb-head">${logoImg(code)}<span class="tb-name">${esc(t.name)}${esc(recordText(code))}</span></span>
                       ${reason?`<span class="tb-reason">${esc(reason)}</span>`:''}
                     </button>`;
                   }).join('')}
@@ -825,9 +839,9 @@ function renderScheduleTab(cw){
       </div>
       <div style="margin-top:16px; display:flex; flex-direction:column; gap:6px;">
         ${games.map(g=>`
-          <div class="pick-row">
-            <span style="display:flex; align-items:center; gap:6px;">${logoImg(g.away,'sm')}<b>${esc(TEAM_BY_CODE[g.away]?.name||g.away)}</b> @ ${logoImg(g.home,'sm')}<b>${esc(TEAM_BY_CODE[g.home]?.name||g.home)}</b></span>
-            <span class="tiny mono">${esc(fmtGameTime(g.kickoff))}</span>
+          <div class="sched-row">
+            <span class="sched-teams">${logoImg(g.away,'sm')}<b>${esc(TEAM_BY_CODE[g.away]?.name||g.away)}</b><span class="tiny">${esc(recordText(g.away))}</span> @ ${logoImg(g.home,'sm')}<b>${esc(TEAM_BY_CODE[g.home]?.name||g.home)}</b><span class="tiny">${esc(recordText(g.home))}</span></span>
+            <span class="sched-time tiny mono">${esc(fmtGameTime(g.kickoff))}</span>
           </div>
         `).join('') || `<div class="tiny">No schedule data for this week.</div>`}
       </div>
