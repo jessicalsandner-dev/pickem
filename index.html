@@ -738,14 +738,22 @@ function renderStandingsTab(){
   `;
 }
 
+function revealedUsedTeams(player){
+  const map = new Map();
+  for(const w of WEEKS){
+    const pk = player.picks[w];
+    if(pk && pickRevealed(pk, w)){ map.set(pk.a, w); map.set(pk.b, w); }
+  }
+  return map;
+}
 function renderBankTab(){
   const players = STATE.players;
   const sel = players.find(p=>p.id===UI.bankPlayerId) || players[0];
-  const used = sel? usedTeams(sel) : new Set();
+  const revealMap = sel ? revealedUsedTeams(sel) : new Map();
   return `
     <div class="card">
       <div class="section-title">Team bank</div>
-      <div class="section-sub">Every team is a single bullet. Once spent, it's off the board for the rest of the season.</div>
+      <div class="section-sub">Every team is a single bullet. Once spent, it's off the board for the rest of the season. A player's pick for the current week stays hidden here too, until it kicks off.</div>
       <div class="field" style="max-width:260px;">
         <label>Viewing</label>
         <select data-role="select-bank-player">
@@ -758,9 +766,8 @@ function renderBankTab(){
             <div class="division-title">${esc(div)}</div>
             <div class="team-grid">
               ${TEAMS.filter(t=>t.div===div).map(t=>{
-                const isUsed = used.has(t.code);
-                let wk = '';
-                if(isUsed){ for(const w of WEEKS){ const pk=sel.picks[w]; if(pk&&(pk.a===t.code||pk.b===t.code)){wk='Wk '+w; break;} } }
+                const isUsed = revealMap.has(t.code);
+                const wk = isUsed ? 'Wk '+revealMap.get(t.code) : '';
                 return `<div class="team-chip ${isUsed?'used':''}"><span class="head">${logoImg(t.code,'sm')}<span class="code">${t.code}</span></span>${isUsed?`<span class="wk">${wk}</span>`:''}</div>`;
               }).join('')}
             </div>
