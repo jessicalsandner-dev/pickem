@@ -253,6 +253,8 @@ tr.lead-row .pts{color:var(--accent-strong); font-size:18px;}
   padding:6px 0; border-top:1px solid var(--line); font-size:13.5px;
 }
 .sched-teams{display:flex; align-items:center; gap:6px; flex-wrap:wrap; flex:1; min-width:0;}
+.sched-team{display:inline-flex; align-items:center; gap:6px; flex-wrap:nowrap;}
+.sched-at{color:var(--ink-faint); font-size:12px; font-weight:700;}
 .sched-time{flex-shrink:0; text-align:right; white-space:nowrap; padding-top:2px;}
 .pick-row:first-of-type{border-top:none; margin-top:10px;}
 .check{font-weight:700;}
@@ -840,7 +842,11 @@ function renderScheduleTab(cw){
       <div style="margin-top:16px; display:flex; flex-direction:column; gap:6px;">
         ${games.map(g=>`
           <div class="sched-row">
-            <span class="sched-teams">${logoImg(g.away,'sm')}<b>${esc(TEAM_BY_CODE[g.away]?.name||g.away)}</b><span class="tiny">${esc(recordText(g.away))}</span> @ ${logoImg(g.home,'sm')}<b>${esc(TEAM_BY_CODE[g.home]?.name||g.home)}</b><span class="tiny">${esc(recordText(g.home))}</span></span>
+            <span class="sched-teams">
+              <span class="sched-team">${logoImg(g.away,'sm')}<b>${esc(TEAM_BY_CODE[g.away]?.name||g.away)}</b><span class="tiny">${esc(recordText(g.away))}</span></span>
+              <span class="sched-at">@</span>
+              <span class="sched-team">${logoImg(g.home,'sm')}<b>${esc(TEAM_BY_CODE[g.home]?.name||g.home)}</b><span class="tiny">${esc(recordText(g.home))}</span></span>
+            </span>
             <span class="sched-time tiny mono">${esc(fmtGameTime(g.kickoff))}</span>
           </div>
         `).join('') || `<div class="tiny">No schedule data for this week.</div>`}
