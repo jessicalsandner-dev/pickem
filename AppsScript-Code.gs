@@ -366,18 +366,34 @@ function pullScores() {
     // protection blocks it from Google's server IPs with an HTTP 403 —
     // this scoreboard endpoint is the one already proven to work from here.)
     const newRecords = {};
+    let weeksWithEvents = 0;
+    let loggedSample = false;
 
     for (let week = 1; week <= 16; week++) {
       const url = 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard'
         + '?seasontype=2&week=' + week + '&dates=' + SEASON_YEAR;
       let data;
       try {
-        data = JSON.parse(UrlFetchApp.fetch(url, { muteHttpExceptions: true }).getContentText());
+        const resp = UrlFetchApp.fetch(url, { muteHttpExceptions: true });
+        if (resp.getResponseCode() !== 200) {
+          Logger.log('week %s: HTTP %s', week, resp.getResponseCode());
+          continue;
+        }
+        data = JSON.parse(resp.getContentText());
       } catch (err) {
+        Logger.log('week %s: fetch/parse error: %s', week, err);
         continue; // transient network issue — try again on tomorrow's run
       }
       const events = data.events || [];
       if (!events.length) continue;
+      weeksWithEvents++;
+
+      if (!loggedSample) {
+        loggedSample = true;
+        const sampleComp = events[0].competitions && events[0].competitions[0];
+        const sampleCompetitor = sampleComp && sampleComp.competitors && sampleComp.competitors[0];
+        Logger.log('week %s sample competitor: %s', week, JSON.stringify(sampleCompetitor).slice(0, 500));
+      }
 
       const wk = String(week);
       const existing = (shared.weekResults[wk] && shared.weekResults[wk].winners) || [];
@@ -411,6 +427,8 @@ function pullScores() {
         changed = true;
       }
     }
+
+    Logger.log('weeksWithEvents=%s, newRecords count=%s', weeksWithEvents, Object.keys(newRecords).length);
 
     if (Object.keys(newRecords).length && JSON.stringify(newRecords) !== JSON.stringify(shared.teamRecords || {})) {
       shared.teamRecords = newRecords;
