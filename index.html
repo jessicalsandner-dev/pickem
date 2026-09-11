@@ -256,7 +256,8 @@ tr.lead-row .pts{color:var(--accent-strong); font-size:18px;}
 .sched-teams{display:flex; align-items:center; gap:6px; flex-wrap:wrap; flex:1; min-width:0;}
 .sched-team{display:inline-flex; align-items:center; gap:6px; flex-wrap:nowrap;}
 .sched-at{color:var(--ink-faint); font-size:12px; font-weight:700;}
-.sched-time{flex-shrink:0; text-align:right; white-space:nowrap; padding-top:2px;}
+.sched-result{flex-shrink:0; text-align:right; white-space:nowrap; padding-top:2px; display:flex; flex-direction:column; align-items:flex-end; gap:2px;}
+.sched-final{font-size:14px; font-weight:700; color:var(--ink);}
 .pick-row:first-of-type{border-top:none; margin-top:10px;}
 .check{font-weight:700;}
 .check.hit{color:var(--accent-strong);}
@@ -593,8 +594,10 @@ async function maybeSyncEspnData(){
     if(!events.length) continue;
 
     const wk = String(week);
-    const existing = (newWeekResults[wk] && newWeekResults[wk].winners) || [];
-    const winners = new Set(existing);
+    const existingEntry = newWeekResults[wk] || {entered:false, winners:[]};
+    const existingWinners = existingEntry.winners || [];
+    const winners = new Set(existingWinners);
+    const scores = Object.assign({}, existingEntry.scores || {});
 
     events.forEach(ev=>{
       const comp = ev.competitions && ev.competitions[0];
@@ -608,6 +611,11 @@ async function maybeSyncEspnData(){
       });
 
       if(!comp.status || !comp.status.type || !comp.status.type.completed) return;
+      const awayC = competitors.find(c=>c.homeAway==='away');
+      const homeC = competitors.find(c=>c.homeAway==='home');
+      if(awayC && homeC){
+        scores[`${espnAbbr(awayC.team.abbreviation)}@${espnAbbr(homeC.team.abbreviation)}`] = {away:awayC.score, home:homeC.score};
+      }
       const winnerComp = competitors.find(c=>c.winner===true);
       const loserComp = competitors.find(c=>c.winner===false);
       if(!winnerComp) return;
@@ -618,9 +626,10 @@ async function maybeSyncEspnData(){
     });
 
     const newWinners = Array.from(winners).sort();
-    const oldWinners = existing.slice().sort();
-    if(newWinners.length && JSON.stringify(newWinners) !== JSON.stringify(oldWinners)){
-      newWeekResults[wk] = {entered:true, winners:newWinners};
+    const winnersChanged = JSON.stringify(newWinners) !== JSON.stringify(existingWinners.slice().sort());
+    const scoresChanged = JSON.stringify(scores) !== JSON.stringify(existingEntry.scores || {});
+    if(winnersChanged || scoresChanged){
+      newWeekResults[wk] = {entered: newWinners.length>0, winners:newWinners, scores};
       resultsChanged = true;
     }
   }
@@ -908,10 +917,11 @@ function renderScheduleTab(cw){
   const games = SCHEDULE[w] || [];
   const playing = new Set(games.flatMap(g=>[g.away,g.home]));
   const byeTeams = TEAMS.filter(t=>!playing.has(t.code));
+  const gameScores = (STATE.weekResults[w] && STATE.weekResults[w].scores) || {};
   return `
     <div class="card">
       <div class="section-title">Schedule</div>
-      <div class="section-sub">Real 2026 kickoff times, shown in your local time zone.</div>
+      <div class="section-sub">Real 2026 kickoff times, shown in your local time zone — final scores once a game's done.</div>
       <div class="field" style="max-width:200px;">
         <label>Week</label>
         <select data-role="schedule-week">
@@ -919,16 +929,21 @@ function renderScheduleTab(cw){
         </select>
       </div>
       <div style="margin-top:16px; display:flex; flex-direction:column; gap:6px;">
-        ${games.map(g=>`
+        ${games.map(g=>{
+          const sc = gameScores[`${g.away}@${g.home}`];
+          const timeHtml = sc
+            ? `<span class="sched-time sched-final mono">${esc(sc.away)}-${esc(sc.home)}</span><span class="tiny">Final</span>`
+            : `<span class="sched-time tiny mono">${esc(fmtGameTime(g.kickoff))}</span>`;
+          return `
           <div class="sched-row">
             <span class="sched-teams">
               <span class="sched-team">${logoImg(g.away,'sm')}<b>${esc(TEAM_BY_CODE[g.away]?.name||g.away)}</b><span class="tiny">${esc(recordText(g.away))}</span></span>
               <span class="sched-at">@</span>
               <span class="sched-team">${logoImg(g.home,'sm')}<b>${esc(TEAM_BY_CODE[g.home]?.name||g.home)}</b><span class="tiny">${esc(recordText(g.home))}</span></span>
             </span>
-            <span class="sched-time tiny mono">${esc(fmtGameTime(g.kickoff))}</span>
+            <span class="sched-result">${timeHtml}</span>
           </div>
-        `).join('') || `<div class="tiny">No schedule data for this week.</div>`}
+        `;}).join('') || `<div class="tiny">No schedule data for this week.</div>`}
       </div>
       ${byeTeams.length? `<div class="tiny" style="margin-top:14px;">On bye: ${byeTeams.map(t=>t.code).join(', ')}</div>`:''}
     </div>
