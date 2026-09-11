@@ -54,6 +54,7 @@ function defaultShared_() {
     season: 2026, week1Deadline: null, weekOverrides: {}, adminPin: null,
     weekResults: defaultWeekResults_(),
     teamRecords: {},
+    lastEspnSync: null,
     sharedPlayers: SHARED_NAMES.map(function (name) { return { id: Utilities.getUuid(), name: name, pin: null, picks: {} }; })
   };
 }
@@ -77,6 +78,7 @@ function buildMergedState_(league) {
     adminPin: shared.adminPin,
     weekResults: shared.weekResults,
     teamRecords: shared.teamRecords || {},
+    lastEspnSync: shared.lastEspnSync || null,
     wildcard: local.wildcard,
     players: shared.sharedPlayers.concat(local.localPlayers)
   };
@@ -95,6 +97,7 @@ function splitAndSave_(league, state) {
     adminPin: state.adminPin,
     weekResults: state.weekResults,
     teamRecords: state.teamRecords || {},
+    lastEspnSync: state.lastEspnSync || null,
     sharedPlayers: sharedPlayers
   });
   writeJson_(LEAGUE_SHEETS[league], {
@@ -179,6 +182,7 @@ function migrateToMultiLeague() {
     adminPin: old.adminPin,
     weekResults: old.weekResults,
     teamRecords: old.teamRecords || {},
+    lastEspnSync: old.lastEspnSync || null,
     sharedPlayers: sharedPlayers
   });
 
@@ -326,21 +330,16 @@ function reconcileMissedWeeks_(dates, players) {
 
 /* ==========================================================================
    Daily maintenance: auto-assign missed picks (shared players once, then
-   each league's own local players), then pull any newly-finished game
-   results from ESPN's public scoreboard feed into the shared blob. Games
-   happen Thu/Sun/Mon (and occasionally Sat/Fri), so this checks every week
-   1-16 each run rather than assuming "the current week" — cheap, and
-   catches any week whose games just finished. Never removes a result
-   that's already on file; only adds/corrects winners for games that are
-   now final.
+   each league's own local players).
+   NOTE: this used to also pull game results and team records from ESPN
+   here, but ESPN's edge protection persistently blocks Google's Apps
+   Script server IPs (confirmed via repeated HTTP 403s, including on
+   scheduled runs, not just a temporary rate limit) — so that part moved
+   to the front-end (see maybeSyncEspnData() in index.html), which runs
+   from each visitor's own browser instead and isn't blocked. This job
+   still matters on its own: missed-pick auto-assignment doesn't touch
+   ESPN at all, so it keeps working here regardless.
    ========================================================================== */
-const SEASON_YEAR = 2026;
-const ESPN_ABBR_TO_OURS = { WSH: 'WAS' };
-
-function espnAbbr_(abbr) {
-  return ESPN_ABBR_TO_OURS[abbr] || abbr;
-}
-
 function pullScores() {
   const lock = LockService.getScriptLock();
   lock.waitLock(10000);
@@ -357,83 +356,6 @@ function pullScores() {
         writeJson_(LEAGUE_SHEETS[league], local);
       }
     });
-
-    // Team records come along for free in this same scoreboard response (each
-    // competitor carries its current overall record) — no separate call
-    // needed. Weeks are walked 1->16 in order and later weeks simply
-    // overwrite earlier ones for the same team, so we end up with whatever
-    // is freshest. (A dedicated standings endpoint exists but ESPN's edge
-    // protection blocks it from Google's server IPs with an HTTP 403 —
-    // this scoreboard endpoint is the one already proven to work from here.)
-    const newRecords = {};
-    let weeksWithEvents = 0;
-    let loggedSample = false;
-
-    for (let week = 1; week <= 16; week++) {
-      const url = 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard'
-        + '?seasontype=2&week=' + week + '&dates=' + SEASON_YEAR;
-      let data;
-      try {
-        const resp = UrlFetchApp.fetch(url, { muteHttpExceptions: true });
-        if (resp.getResponseCode() !== 200) {
-          Logger.log('week %s: HTTP %s', week, resp.getResponseCode());
-          continue;
-        }
-        data = JSON.parse(resp.getContentText());
-      } catch (err) {
-        Logger.log('week %s: fetch/parse error: %s', week, err);
-        continue; // transient network issue — try again on tomorrow's run
-      }
-      const events = data.events || [];
-      if (!events.length) continue;
-      weeksWithEvents++;
-
-      if (!loggedSample) {
-        loggedSample = true;
-        const sampleComp = events[0].competitions && events[0].competitions[0];
-        const sampleCompetitor = sampleComp && sampleComp.competitors && sampleComp.competitors[0];
-        Logger.log('week %s sample competitor: %s', week, JSON.stringify(sampleCompetitor).slice(0, 500));
-      }
-
-      const wk = String(week);
-      const existing = (shared.weekResults[wk] && shared.weekResults[wk].winners) || [];
-      const winners = new Set(existing);
-
-      events.forEach(function (ev) {
-        const comp = ev.competitions && ev.competitions[0];
-        if (!comp) return;
-        const competitors = comp.competitors || [];
-
-        competitors.forEach(function (c) {
-          const abbr = espnAbbr_(c.team.abbreviation);
-          const overall = (c.records || []).find(function (r) { return r.name === 'overall'; });
-          if (overall) newRecords[abbr] = overall.summary;
-        });
-
-        if (!comp.status || !comp.status.type || !comp.status.type.completed) return;
-        const winnerComp = competitors.find(function (c) { return c.winner === true; });
-        const loserComp = competitors.find(function (c) { return c.winner === false; });
-        if (!winnerComp) return; // tie, or not yet finalized
-        const winCode = espnAbbr_(winnerComp.team.abbreviation);
-        const loseCode = loserComp ? espnAbbr_(loserComp.team.abbreviation) : null;
-        if (loseCode) winners.delete(loseCode);
-        if (!winners.has(winCode)) winners.add(winCode);
-      });
-
-      const newWinners = Array.from(winners).sort();
-      const oldWinners = existing.slice().sort();
-      if (newWinners.length && JSON.stringify(newWinners) !== JSON.stringify(oldWinners)) {
-        shared.weekResults[wk] = { entered: true, winners: newWinners };
-        changed = true;
-      }
-    }
-
-    Logger.log('weeksWithEvents=%s, newRecords count=%s', weeksWithEvents, Object.keys(newRecords).length);
-
-    if (Object.keys(newRecords).length && JSON.stringify(newRecords) !== JSON.stringify(shared.teamRecords || {})) {
-      shared.teamRecords = newRecords;
-      changed = true;
-    }
 
     if (changed) {
       writeJson_(SHARED_SHEET, shared);

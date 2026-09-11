@@ -560,6 +560,79 @@ async function pollForUpdates(){
   }catch(e){ /* transient network hiccup — try again next tick */ }
 }
 
+/* ==========================================================================
+   ESPN sync — pulls game results and team records directly from the
+   visitor's own browser, not from Apps Script's servers.
+   ESPN's edge protection blocks Google's Apps Script IPs specifically
+   (confirmed via repeated HTTP 403s even on scheduled runs), but a normal
+   browser is unaffected, so this runs the same logic client-side instead
+   and saves through the usual persist() path. Throttled via a shared
+   timestamp so many visitors within the same window don't all re-fetch.
+   ========================================================================== */
+const ESPN_ABBR_TO_OURS = { WSH: 'WAS' };
+function espnAbbr(abbr){ return ESPN_ABBR_TO_OURS[abbr] || abbr; }
+const ESPN_SYNC_MIN_INTERVAL_MS = 30*60*1000; // 30 minutes
+
+async function maybeSyncEspnData(){
+  const last = STATE.lastEspnSync ? new Date(STATE.lastEspnSync).getTime() : 0;
+  if(Date.now() - last < ESPN_SYNC_MIN_INTERVAL_MS) return;
+
+  const newWeekResults = JSON.parse(JSON.stringify(STATE.weekResults));
+  const newRecords = {};
+  let resultsChanged = false;
+
+  for(let week=1; week<=16; week++){
+    let data;
+    try{
+      const res = await fetch(`https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?seasontype=2&week=${week}&dates=2026`, {cache:'no-store'});
+      if(!res.ok) continue;
+      data = await res.json();
+    }catch(e){ continue; }
+    const events = data.events || [];
+    if(!events.length) continue;
+
+    const wk = String(week);
+    const existing = (newWeekResults[wk] && newWeekResults[wk].winners) || [];
+    const winners = new Set(existing);
+
+    events.forEach(ev=>{
+      const comp = ev.competitions && ev.competitions[0];
+      if(!comp) return;
+      const competitors = comp.competitors || [];
+
+      competitors.forEach(c=>{
+        const abbr = espnAbbr(c.team.abbreviation);
+        const overall = (c.records||[]).find(r=>r.name==='overall');
+        if(overall) newRecords[abbr] = overall.summary;
+      });
+
+      if(!comp.status || !comp.status.type || !comp.status.type.completed) return;
+      const winnerComp = competitors.find(c=>c.winner===true);
+      const loserComp = competitors.find(c=>c.winner===false);
+      if(!winnerComp) return;
+      const winCode = espnAbbr(winnerComp.team.abbreviation);
+      const loseCode = loserComp ? espnAbbr(loserComp.team.abbreviation) : null;
+      if(loseCode) winners.delete(loseCode);
+      if(!winners.has(winCode)) winners.add(winCode);
+    });
+
+    const newWinners = Array.from(winners).sort();
+    const oldWinners = existing.slice().sort();
+    if(newWinners.length && JSON.stringify(newWinners) !== JSON.stringify(oldWinners)){
+      newWeekResults[wk] = {entered:true, winners:newWinners};
+      resultsChanged = true;
+    }
+  }
+
+  const recordsChanged = Object.keys(newRecords).length>0 &&
+    JSON.stringify(newRecords) !== JSON.stringify(STATE.teamRecords||{});
+
+  STATE.lastEspnSync = new Date().toISOString();
+  if(resultsChanged) STATE.weekResults = newWeekResults;
+  if(recordsChanged) STATE.teamRecords = newRecords;
+  await persist(); // always save, at minimum to update the throttle timestamp
+}
+
 /* ---------- render ---------- */
 function h(strings,...vals){ return strings.map((s,i)=>s+(vals[i]??'')).join(''); }
 function esc(s){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
@@ -1324,6 +1397,7 @@ function onAction(e){
   }
   if(reconcileMissedWeeks()){ await persist(); } else { render(); }
   setInterval(pollForUpdates, POLL_MS);
+  maybeSyncEspnData(); // fire-and-forget — re-renders via persist() if it finds anything new
 })();
 </script>
 </body>
