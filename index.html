@@ -160,8 +160,9 @@ main{padding-top:24px; display:flex; flex-direction:column; gap:24px;}
 .status-tag::before{content:''; display:inline-block; width:6px; height:6px; border-radius:50%; margin-right:5px; background:currentColor; vertical-align:middle;}
 .status-pending{background:var(--surface-2); color:var(--ink-faint);}
 .status-in{background:var(--accent-wash); color:var(--accent-strong);}
-.status-auto{background:var(--danger-wash); color:var(--danger);}
 .status-locked{background:var(--gold-wash); color:var(--gold);}
+.wk-pts{font-family:'JetBrains Mono',monospace; font-weight:700; font-size:12px; color:var(--ink-faint);}
+.wk-pts.hit{color:var(--accent-strong);}
 
 /* pin gate */
 .identity-row{display:flex; flex-wrap:wrap; gap:10px; align-items:center;}
@@ -811,12 +812,17 @@ function renderWeekTab(cw){
         ${STATE.players.map(p=>{
           const pk = p.picks[cw];
           const revealed = pickRevealed(pk, cw);
-          let tag, cls, detail;
+          const resultsIn = STATE.weekResults[cw] && STATE.weekResults[cw].entered;
+          let tag, cls, detail, pts=null;
           if(!pk){ tag='Pending'; cls='status-pending'; detail=''; }
-          else if(pk.source==='auto'){ tag='Auto-picked'; cls='status-auto'; detail = revealed? `${pk.a} / ${pk.b}` : ''; }
-          else if(revealed){ tag='Locked'; cls='status-locked'; detail = `${pk.a} / ${pk.b}`; }
-          else { tag='Submitted'; cls='status-in'; detail=''; }
-          return `<div class="roster-chip"><span class="name">${esc(p.name)}</span><span class="status-tag ${cls}">${tag}</span>${detail?`<span class="tiny mono">${detail}</span>`:''}</div>`;
+          else if(revealed){
+            tag = pk.source==='auto' ? 'Locked (auto)' : 'Locked';
+            cls = 'status-locked';
+            detail = `${pk.a} / ${pk.b}`;
+            if(resultsIn) pts = weekScore(p, cw);
+          } else { tag='Submitted'; cls='status-in'; detail=''; }
+          const ptsHtml = pts!==null ? `<span class="wk-pts ${pts>0?'hit':''}">${pts} pt${pts===1?'':'s'} this week</span>` : '';
+          return `<div class="roster-chip"><span class="name">${esc(p.name)}</span><span class="status-tag ${cls}">${esc(tag)}</span>${detail?`<span class="tiny mono">${esc(detail)}</span>`:''}${ptsHtml}</div>`;
         }).join('')}
       </div>
     </div>
