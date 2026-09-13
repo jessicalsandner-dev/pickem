@@ -880,7 +880,7 @@ function renderWeekTab(cw){
       <div class="section-title">Who's in</div>
       <div class="section-sub">Picks reveal the moment a player's earlier team actually kicks off — not all at once.</div>
       <div class="roster-grid">
-        ${STATE.players.map(p=>{
+        ${STATE.players.slice().sort((a,b)=>weekScore(b,week)-weekScore(a,week) || a.name.localeCompare(b.name)).map(p=>{
           const pk = p.picks[week];
           const revealed = pickRevealed(pk, week);
           let tag, cls, detail;
