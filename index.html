@@ -169,8 +169,9 @@ main{padding-top:24px; display:flex; flex-direction:column; gap:24px;}
 .status-in{background:var(--accent-wash); color:var(--accent-strong);}
 .status-locked{background:var(--locked-wash); color:var(--locked);}
 .wk-score{display:flex; align-items:center; gap:5px; margin-top:1px;}
-.wk-dot{width:8px; height:8px; border-radius:50%; background:var(--surface-2); border:1.5px solid var(--line); flex-shrink:0;}
+.wk-dot{width:8px; height:8px; border-radius:50%; background:transparent; border:1.5px solid var(--line); flex-shrink:0;}
 .wk-dot.hit{background:var(--accent-strong); border-color:var(--accent-strong);}
+.wk-dot.miss{background:var(--ink-faint); border-color:var(--ink-faint);}
 .wk-score-num{font-family:'JetBrains Mono',monospace; font-weight:700; font-size:11px; color:var(--ink-faint);}
 .pick-hit{color:var(--accent-strong); font-weight:700;}
 .pick-miss{color:var(--ink-faint);}
@@ -504,6 +505,18 @@ function weekScore(player, w){
   if(res.winners.includes(pk.b)) s++;
   return s;
 }
+/* Per-pick outcome: 'hit' | 'miss' | 'pending'. Uses that specific game's
+   own final score (not just "has this week seen any results yet") so a
+   team whose game hasn't finished reads as pending, never as a loss. */
+function pickOutcome(week, code){
+  const res = STATE.weekResults[week];
+  if(!res) return 'pending';
+  const game = (SCHEDULE[week]||[]).find(g=>g.away===code || g.home===code);
+  if(!game) return 'pending';
+  const final = res.scores && res.scores[`${game.away}@${game.home}`];
+  if(!final) return 'pending';
+  return (res.winners||[]).includes(code) ? 'hit' : 'miss';
+}
 function totalScore(player){
   return WEEKS.reduce((s,w)=>s+weekScore(player,w),0);
 }
@@ -832,22 +845,21 @@ function renderWeekTab(cw){
         ${STATE.players.map(p=>{
           const pk = p.picks[cw];
           const revealed = pickRevealed(pk, cw);
-          const resultsIn = STATE.weekResults[cw] && STATE.weekResults[cw].entered;
-          let tag, cls, detail, pts=null, hitA=false, hitB=false;
+          let tag, cls, detail;
+          let outcomeA = 'pending', outcomeB = 'pending';
           if(!pk){ tag='Pending'; cls='status-pending'; detail=''; }
           else if(revealed){
             tag = pk.source==='auto' ? 'Locked (auto)' : 'Locked';
             cls = 'status-locked';
-            if(resultsIn){
-              const winners = STATE.weekResults[cw].winners;
-              hitA = winners.includes(pk.a); hitB = winners.includes(pk.b);
-              pts = weekScore(p, cw);
-            }
-            const codeCls = hit => resultsIn ? (hit?'pick-hit':'pick-miss') : '';
-            detail = `${logoImg(pk.a,'sm')}<span class="${codeCls(hitA)}">${esc(pk.a)}</span> / ${logoImg(pk.b,'sm')}<span class="${codeCls(hitB)}">${esc(pk.b)}</span>`;
+            outcomeA = pickOutcome(cw, pk.a);
+            outcomeB = pickOutcome(cw, pk.b);
+            const codeCls = o => o==='hit' ? 'pick-hit' : o==='miss' ? 'pick-miss' : '';
+            detail = `${logoImg(pk.a,'sm')}<span class="${codeCls(outcomeA)}">${esc(pk.a)}</span> / ${logoImg(pk.b,'sm')}<span class="${codeCls(outcomeB)}">${esc(pk.b)}</span>`;
           } else { tag='Submitted'; cls='status-in'; detail=''; }
-          const scoreHtml = pts!==null
-            ? `<span class="wk-score"><span class="wk-dot ${hitA?'hit':''}"></span><span class="wk-dot ${hitB?'hit':''}"></span><span class="wk-score-num">${pts}/2</span></span>`
+          const anyDecided = outcomeA!=='pending' || outcomeB!=='pending';
+          const dot = o => `<span class="wk-dot ${o}"></span>`;
+          const scoreHtml = (revealed && anyDecided)
+            ? `<span class="wk-score">${dot(outcomeA)}${dot(outcomeB)}<span class="wk-score-num">${weekScore(p,cw)}/2</span></span>`
             : '';
           return `<div class="roster-chip"><span class="name">${esc(p.name)}</span><span class="status-tag ${cls}">${esc(tag)}</span>${detail?`<span class="tiny mono roster-picks">${detail}</span>`:''}${scoreHtml}</div>`;
         }).join('')}
