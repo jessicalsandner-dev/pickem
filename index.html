@@ -445,6 +445,30 @@ function currentWeek(){
   return 17;
 }
 
+/* What week the app should actually show as "current" — distinct from
+   currentWeek(), which flips the moment a week's submission deadline
+   passes (e.g. Sunday 12:30pm) even though that week's own games are
+   still being played. displayWeek() instead stays on a week until the
+   *next* week's games actually begin, so "This Week," the top bar, and
+   admin's defaults keep showing Week 1 through all its games rather than
+   jumping to Week 2 the moment picking closes. reconcileMissedWeeks()
+   deliberately keeps using currentWeek() (deadline-based) — auto-pick
+   assignment should still fire right when a deadline passes. */
+function weekKickoffs(w){
+  return (SCHEDULE[w]||[]).map(g=>g.kickoff).filter(Boolean).map(k=>new Date(k).getTime());
+}
+function displayWeek(){
+  const lastGame = weekKickoffs(16);
+  if(lastGame.length && isPast(new Date(Math.max(...lastGame)))) return 17;
+  let w = 1;
+  for(const week of WEEKS){
+    const kicks = weekKickoffs(week);
+    const first = kicks.length ? new Date(Math.min(...kicks)) : null;
+    if(first && isPast(first)) w = week; else break;
+  }
+  return w;
+}
+
 /* ---------- domain logic ---------- */
 function usedTeams(player, throughWeek){
   const used = new Set();
@@ -675,7 +699,7 @@ function logoImg(code, cls){ return `<img class="team-logo ${cls||''}" src="${lo
 function recordText(code){ const r = STATE.teamRecords && STATE.teamRecords[code]; return r ? ` (${r})` : ''; }
 
 function render(){
-  const cw = currentWeek();
+  const cw = displayWeek();
   document.getElementById('app').innerHTML = h`
     ${renderTopbar(cw)}
     <div class="wrap">
@@ -719,7 +743,11 @@ function renderTopbar(cw){
   let weekLabel, weekMeta;
   if(cw===null){ weekLabel='Setup'; weekMeta='No schedule data for this week'; }
   else if(cw>16){ weekLabel='Final'; weekMeta = wildcardTabVisible() ? 'Tied at the top — see Wild Card' : 'Season complete'; }
-  else { const dl = weekDeadline(cw); weekLabel = 'Wk '+cw; weekMeta = 'Picks lock '+fmtDT(dl); }
+  else {
+    const dl = weekDeadline(cw);
+    weekLabel = 'Wk '+cw;
+    weekMeta = isPast(dl) ? 'Picks locked — games underway' : 'Picks lock '+fmtDT(dl);
+  }
   return `
     <div class="topbar">
       <div class="topbar-inner">
@@ -1087,7 +1115,7 @@ function renderAdminTab(){
       </div>
     `;
   }
-  const cw = currentWeek();
+  const cw = displayWeek();
   return `
     <div class="card">
       <div class="section-title">Season setup</div>
