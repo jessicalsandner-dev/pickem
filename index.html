@@ -168,8 +168,12 @@ main{padding-top:24px; display:flex; flex-direction:column; gap:24px;}
 .status-pending{background:var(--surface-2); color:var(--ink-faint);}
 .status-in{background:var(--accent-wash); color:var(--accent-strong);}
 .status-locked{background:var(--locked-wash); color:var(--locked);}
-.wk-pts{font-family:'JetBrains Mono',monospace; font-weight:700; font-size:12px; color:var(--ink-faint);}
-.wk-pts.hit{color:var(--accent-strong);}
+.wk-score{display:flex; align-items:center; gap:5px; margin-top:1px;}
+.wk-dot{width:8px; height:8px; border-radius:50%; background:var(--surface-2); border:1.5px solid var(--line); flex-shrink:0;}
+.wk-dot.hit{background:var(--accent-strong); border-color:var(--accent-strong);}
+.wk-score-num{font-family:'JetBrains Mono',monospace; font-weight:700; font-size:11px; color:var(--ink-faint);}
+.pick-hit{color:var(--accent-strong); font-weight:700;}
+.pick-miss{color:var(--ink-faint);}
 
 /* pin gate */
 .identity-row{display:flex; flex-wrap:wrap; gap:10px; align-items:center;}
@@ -829,16 +833,23 @@ function renderWeekTab(cw){
           const pk = p.picks[cw];
           const revealed = pickRevealed(pk, cw);
           const resultsIn = STATE.weekResults[cw] && STATE.weekResults[cw].entered;
-          let tag, cls, detail, pts=null;
+          let tag, cls, detail, pts=null, hitA=false, hitB=false;
           if(!pk){ tag='Pending'; cls='status-pending'; detail=''; }
           else if(revealed){
             tag = pk.source==='auto' ? 'Locked (auto)' : 'Locked';
             cls = 'status-locked';
-            detail = `${logoImg(pk.a,'sm')}<span>${esc(pk.a)}</span> / ${logoImg(pk.b,'sm')}<span>${esc(pk.b)}</span>`;
-            if(resultsIn) pts = weekScore(p, cw);
+            if(resultsIn){
+              const winners = STATE.weekResults[cw].winners;
+              hitA = winners.includes(pk.a); hitB = winners.includes(pk.b);
+              pts = weekScore(p, cw);
+            }
+            const codeCls = hit => resultsIn ? (hit?'pick-hit':'pick-miss') : '';
+            detail = `${logoImg(pk.a,'sm')}<span class="${codeCls(hitA)}">${esc(pk.a)}</span> / ${logoImg(pk.b,'sm')}<span class="${codeCls(hitB)}">${esc(pk.b)}</span>`;
           } else { tag='Submitted'; cls='status-in'; detail=''; }
-          const ptsHtml = pts!==null ? `<span class="wk-pts ${pts>0?'hit':''}">${pts} pt${pts===1?'':'s'} this week</span>` : '';
-          return `<div class="roster-chip"><span class="name">${esc(p.name)}</span><span class="status-tag ${cls}">${esc(tag)}</span>${detail?`<span class="tiny mono roster-picks">${detail}</span>`:''}${ptsHtml}</div>`;
+          const scoreHtml = pts!==null
+            ? `<span class="wk-score"><span class="wk-dot ${hitA?'hit':''}"></span><span class="wk-dot ${hitB?'hit':''}"></span><span class="wk-score-num">${pts}/2</span></span>`
+            : '';
+          return `<div class="roster-chip"><span class="name">${esc(p.name)}</span><span class="status-tag ${cls}">${esc(tag)}</span>${detail?`<span class="tiny mono roster-picks">${detail}</span>`:''}${scoreHtml}</div>`;
         }).join('')}
       </div>
     </div>
