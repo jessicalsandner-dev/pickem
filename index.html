@@ -159,6 +159,7 @@ main{padding-top:24px; display:flex; flex-direction:column; gap:24px;}
   display:flex; flex-direction:column; gap:3px; background:var(--surface);
 }
 .roster-chip .name{font-weight:600; font-size:13.5px;}
+.roster-picks{display:flex; align-items:center; flex-wrap:wrap; gap:4px;}
 .status-tag{
   font-size:10.5px; text-transform:uppercase; letter-spacing:0.06em; font-weight:700;
   padding:2px 7px; border-radius:999px; width:fit-content;
@@ -833,11 +834,11 @@ function renderWeekTab(cw){
           else if(revealed){
             tag = pk.source==='auto' ? 'Locked (auto)' : 'Locked';
             cls = 'status-locked';
-            detail = `${pk.a} / ${pk.b}`;
+            detail = `${logoImg(pk.a,'sm')}<span>${esc(pk.a)}</span> / ${logoImg(pk.b,'sm')}<span>${esc(pk.b)}</span>`;
             if(resultsIn) pts = weekScore(p, cw);
           } else { tag='Submitted'; cls='status-in'; detail=''; }
           const ptsHtml = pts!==null ? `<span class="wk-pts ${pts>0?'hit':''}">${pts} pt${pts===1?'':'s'} this week</span>` : '';
-          return `<div class="roster-chip"><span class="name">${esc(p.name)}</span><span class="status-tag ${cls}">${esc(tag)}</span>${detail?`<span class="tiny mono">${esc(detail)}</span>`:''}${ptsHtml}</div>`;
+          return `<div class="roster-chip"><span class="name">${esc(p.name)}</span><span class="status-tag ${cls}">${esc(tag)}</span>${detail?`<span class="tiny mono roster-picks">${detail}</span>`:''}${ptsHtml}</div>`;
         }).join('')}
       </div>
     </div>
