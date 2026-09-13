@@ -797,18 +797,27 @@ function pickRevealed(pk, week){
   return isPast(ka) || isPast(kb) || isPast(weekDeadline(week));
 }
 function renderWeekTab(cw){
+  const week = (UI.pickWeek && UI.pickWeek>=1 && UI.pickWeek<=16) ? UI.pickWeek : cw;
+  const weekPicker = `
+    <div class="field" style="max-width:200px; margin-bottom:14px;">
+      <label>Week</label>
+      <select data-role="pick-week">
+        ${WEEKS.map(n=>`<option value="${n}" ${week===n?'selected':''}>Week ${n}${n===cw?' (current)':''}</option>`).join('')}
+      </select>
+    </div>
+  `;
   if(cw===null){
     return `<div class="card"><div class="banner gold"><span>⚠️</span><div>No schedule data for this week yet — check <b>Admin</b>.</div></div></div>`;
   }
-  if(cw>16){
+  if(week>16){
     return `<div class="card"><div class="banner accent"><span>🏆</span><div>All 16 weeks are locked in. Check <b>Standings</b>${wildcardTabVisible()?' or the <b>Wild Card</b> tab — there’s a tie at the top':''}.</div></div></div>`;
   }
-  const dl = weekDeadline(cw);
+  const dl = weekDeadline(week);
   const locked = isPast(dl);
   const sel = STATE.players.find(p=>p.id===UI.selectedPlayerId);
   const unlocked = sel && UI.unlockedIds.includes(sel.id);
-  const myPick = sel ? sel.picks[cw] : null;
-  const myFrozen = myPick && (locked || isPast(teamKickoff(cw,myPick.a)) || isPast(teamKickoff(cw,myPick.b)));
+  const myPick = sel ? sel.picks[week] : null;
+  const myFrozen = myPick && (locked || isPast(teamKickoff(week,myPick.a)) || isPast(teamKickoff(week,myPick.b)));
 
   let formBlock = '';
   if(sel && unlocked){
@@ -817,13 +826,13 @@ function renderWeekTab(cw){
         ? `<div class="banner accent" style="margin-top:14px;"><span>🔒</span><div>Locked in. You had <b>${esc(TEAM_BY_CODE[myPick.a]?.name)}</b> and <b>${esc(TEAM_BY_CODE[myPick.b]?.name)}</b>${myPick.source==='auto'?' — auto-assigned, you missed the deadline.':''}${!locked?' — one of them has already kicked off, so this week is set.':''}</div></div>`
         : `<div class="banner danger" style="margin-top:14px;">No pick on file and the window’s closed — it’ll auto-fill alphabetically next time the page reloads.</div>`;
     } else {
-      if(!UI.draft || UI.draft.playerId!==sel.id || UI.draft.week!==cw){
-        UI.draft = {playerId:sel.id, week:cw, a: myPick? myPick.a : null, b: myPick? myPick.b : null};
+      if(!UI.draft || UI.draft.playerId!==sel.id || UI.draft.week!==week){
+        UI.draft = {playerId:sel.id, week:week, a: myPick? myPick.a : null, b: myPick? myPick.b : null};
         saveUI();
       }
       const draft = UI.draft;
-      const availCodes = new Set(availableTeamsForWeek(sel, cw).map(t=>t.code));
-      const games = SCHEDULE[cw] || [];
+      const availCodes = new Set(availableTeamsForWeek(sel, week).map(t=>t.code));
+      const games = SCHEDULE[week] || [];
       const bothPicked = draft.a && draft.b;
       const summary = !draft.a && !draft.b ? 'Tap a team in each game you like — pick two winners total.'
         : bothPicked ? 'Both picked — ready to submit.'
@@ -841,8 +850,8 @@ function renderWeekTab(cw){
                     const t = TEAM_BY_CODE[code];
                     const selected = draft.a===code || draft.b===code;
                     const usable = availCodes.has(code) || selected;
-                    const reason = !usable ? teamUnavailableReason(sel, cw, code) : '';
-                    return `${i>0?'<span class="tb-at">@</span>':''}<button type="button" class="team-btn ${selected?'selected':''}" data-action="toggle-pick" data-team="${code}" data-week="${cw}" ${usable?'':'disabled'}>
+                    const reason = !usable ? teamUnavailableReason(sel, week, code) : '';
+                    return `${i>0?'<span class="tb-at">@</span>':''}<button type="button" class="team-btn ${selected?'selected':''}" data-action="toggle-pick" data-team="${code}" data-week="${week}" ${usable?'':'disabled'}>
                       <span class="tb-head">${logoImg(code)}<span class="tb-name">${esc(t.name)}${esc(recordText(code))}</span></span>
                       ${reason?`<span class="tb-reason">${esc(reason)}</span>`:''}
                     </button>`;
@@ -852,7 +861,7 @@ function renderWeekTab(cw){
           }).join('') || `<div class="tiny">No games scheduled for this week.</div>`}
         </div>
         <div class="pick-form">
-          <button class="btn" data-action="submit-pick" data-week="${cw}" data-player="${sel.id}" ${bothPicked?'':'disabled'}>${myPick?'Update picks':'Submit picks'}</button>
+          <button class="btn" data-action="submit-pick" data-week="${week}" data-player="${sel.id}" ${bothPicked?'':'disabled'}>${myPick?'Update picks':'Submit picks'}</button>
         </div>
         ${myPick? `<div class="tiny" style="margin-top:8px;">Submitted — you can change these until either team kicks off.</div>`:''}
       `;
@@ -861,8 +870,9 @@ function renderWeekTab(cw){
 
   return `
     <div class="card">
-      <div class="section-title">Week ${cw} picks</div>
+      <div class="section-title">Week ${week} picks</div>
       <div class="section-sub">Two winners, each team spent once all season. Submission window closes ${fmtDT(dl)} — see the <b>Schedule</b> tab for kickoff times. Picking a team that plays before then is on you to lock in early.</div>
+      ${weekPicker}
       ${pinGateBlock('week')}
       ${formBlock}
     </div>
@@ -871,23 +881,23 @@ function renderWeekTab(cw){
       <div class="section-sub">Picks reveal the moment a player's earlier team actually kicks off — not all at once.</div>
       <div class="roster-grid">
         ${STATE.players.map(p=>{
-          const pk = p.picks[cw];
-          const revealed = pickRevealed(pk, cw);
+          const pk = p.picks[week];
+          const revealed = pickRevealed(pk, week);
           let tag, cls, detail;
           let outcomeA = 'pending', outcomeB = 'pending';
           if(!pk){ tag='Pending'; cls='status-pending'; detail=''; }
           else if(revealed){
             tag = pk.source==='auto' ? 'Locked (auto)' : 'Locked';
             cls = 'status-locked';
-            outcomeA = pickOutcome(cw, pk.a);
-            outcomeB = pickOutcome(cw, pk.b);
+            outcomeA = pickOutcome(week, pk.a);
+            outcomeB = pickOutcome(week, pk.b);
             const codeCls = o => o==='hit' ? 'pick-hit' : o==='miss' ? 'pick-miss' : '';
             detail = `${logoImg(pk.a,'sm')}<span class="${codeCls(outcomeA)}">${esc(pk.a)}</span> / ${logoImg(pk.b,'sm')}<span class="${codeCls(outcomeB)}">${esc(pk.b)}</span>`;
           } else { tag='Submitted'; cls='status-in'; detail=''; }
           const anyDecided = outcomeA!=='pending' || outcomeB!=='pending';
           const dot = o => `<span class="wk-dot ${o}"></span>`;
           const scoreHtml = (revealed && anyDecided)
-            ? `<span class="wk-score">${dot(outcomeA)}${dot(outcomeB)}<span class="wk-score-num">${weekScore(p,cw)}/2</span></span>`
+            ? `<span class="wk-score">${dot(outcomeA)}${dot(outcomeB)}<span class="wk-score-num">${weekScore(p,week)}/2</span></span>`
             : '';
           return `<div class="roster-chip"><span class="name">${esc(p.name)}</span><span class="status-tag ${cls}">${esc(tag)}</span>${detail?`<span class="tiny mono roster-picks">${detail}</span>`:''}${scoreHtml}</div>`;
         }).join('')}
@@ -1306,6 +1316,7 @@ function bindGlobalListeners(){
     if(role==='select-player'){ UI.selectedPlayerId = t.value || null; saveUI(); render(); return; }
     if(role==='select-bank-player'){ UI.bankPlayerId = t.value; saveUI(); render(); return; }
     if(role==='schedule-week'){ UI.scheduleWeek = Number(t.value); saveUI(); render(); return; }
+    if(role==='pick-week'){ UI.pickWeek = Number(t.value); UI.draft = null; saveUI(); render(); return; }
     if(role==='admin-pick-player' || role==='admin-pick-week'){ renderAdminPickTeamRow(); return; }
     if(role==='results-week'){ renderResultsBody(); return; }
     if(role==='rename'){
